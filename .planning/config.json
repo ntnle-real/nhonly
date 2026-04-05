@@ -1,0 +1,30 @@
+{
+  "project": {
+    "name": "nhonly",
+    "description": "Ceremonial audio recording and archiving system",
+    "created": "2026-04-05"
+  },
+  "workflow": {
+    "phases_per_milestone": 6,
+    "auto_commit": true,
+    "atomic_commits": true,
+    "verification_required": true,
+    "model_profile": "balanced"
+  },
+  "tech": {
+    "frontend": "SvelteKit + TypeScript",
+    "recording": "Web Audio API",
+    "storage": "IndexedDB",
+    "patterns": "C3 contracts",
+    "languages": ["vi", "en"]
+  },
+  "gates": {
+    "plan_approval_required": true,
+    "code_review_on_merge": false,
+    "testing_required": true
+  },
+  "preferences": {
+    "language": "en",
+    "timezone": "Asia/Ho_Chi_Minh"
+  }
+}
