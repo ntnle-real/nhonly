@@ -65,7 +65,7 @@ beforeEach(() => {
 		}
 	} as any;
 
-	// Mock window.setInterval (for timer)
+	// Mock window.setInterval and global clearInterval (for timer)
 	globalAny.window = {
 		setInterval: vi.fn((cb: any, ms: number) => {
 			const id = Math.random();
@@ -73,6 +73,9 @@ beforeEach(() => {
 		}),
 		clearInterval: vi.fn()
 	};
+
+	// Also mock global clearInterval since recording.ts calls it directly
+	globalAny.clearInterval = vi.fn();
 
 	// Reset recording state by calling cancelRecording
 	// (Note: elapsedMs is module-scoped, so we cancel to reset it)
@@ -154,7 +157,7 @@ describe('recording.ts', () => {
 			await startRecording();
 			await stopRecording();
 
-			expect(window.clearInterval).toHaveBeenCalled();
+			expect(globalThis.clearInterval).toHaveBeenCalled();
 		});
 
 		it('should cleanup stream tracks on stop', async () => {
@@ -210,7 +213,7 @@ describe('recording.ts', () => {
 			cancelRecording();
 
 			expect(isRecording()).toBe(false);
-			expect(window.clearInterval).toHaveBeenCalled();
+			expect(globalThis.clearInterval).toHaveBeenCalled();
 		});
 	});
 
