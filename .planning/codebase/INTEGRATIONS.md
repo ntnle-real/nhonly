@@ -1,54 +1,85 @@
-# External Integrations & APIs
+# External Integrations
 
-## Third-Party Services
+**Analysis Date:** 2026-04-05
 
-Currently **NONE** - this is a standalone, offline-first application.
+## APIs & External Services
 
-## Browser APIs (Built-in)
+**None Configured:**
+This application has no external API integrations. All functionality is self-contained and client-side.
 
-### Media APIs
-- **Web Audio API**
-  - `navigator.mediaDevices.getUserMedia()` - Request microphone permission
-  - `MediaRecorder` API - Encode audio to WAV format
-  - `AudioContext` available but not actively used
-  - **Risk:** Requires HTTPS in production (exception: localhost in development)
+## Data Storage
 
-### Storage APIs
-- **IndexedDB** - Client-side persistent database
-  - No external server sync
-  - Data persists locally in browser
-  - Subject to browser storage quotas (typically 50MB+)
+**Databases:**
+- IndexedDB (browser native)
+  - Database name: `nhonly_archive`
+  - Version: 1
+  - Object store: `stories` with auto-increment ID
+  - Implementation: `src/lib/archive.ts`
+  - Functions: `initDatabase()`, `saveStory()`, `getAllStories()`, `getStory()`
 
-### Internationalization
-- **No external i18n service** - Strings hardcoded in `src/lib/i18n.ts`
-- Supports: English (en), Vietnamese (vi)
-- Language selection stored in Svelte store (session-only, not persisted)
+**File Storage:**
+- Browser memory (Blob objects)
+- No persistent file storage backend
+- Audio blobs stored only in IndexedDB (in-browser database)
 
-## Deployment
+**Caching:**
+- None (SvelteKit default caching via adapter)
 
-- **No backend server required**
-- **No API endpoints**
-- **No third-party services integrated**
-- Can deploy to any static hosting (Vercel, Netlify, GitHub Pages, S3, etc.)
+## Authentication & Identity
+
+**Auth Provider:**
+- None (not applicable - single-user, client-only application)
+
+## Monitoring & Observability
+
+**Error Tracking:**
+- None (errors logged to browser console via `console.error()` in `src/lib/recording.ts`)
+
+**Logs:**
+- Browser console only
+- Error output in `src/lib/recording.ts` line 42: `console.error('Failed to start recording:', error)`
+
+## CI/CD & Deployment
+
+**Hosting:**
+- Flexible via @sveltejs/adapter-auto (SvelteKit detects environment automatically)
+- Possible targets: Vercel, Netlify, Cloudflare, AWS Lambda, Node.js servers
+
+**CI Pipeline:**
+- None configured (no GitHub Actions, GitLab CI, or similar)
 
 ## Environment Configuration
 
-- No environment variables configured
-- No secrets management needed
-- No configuration files for external services
+**Required env vars:**
+- None (zero environment-dependent configuration)
 
-## Data Flow
+**Secrets location:**
+- Not applicable (no secrets managed)
 
-```
-User Input → Svelte Components → Recording Service (Web Audio API) →
-Audio Blob → Archive Service → IndexedDB → Retrieval on Demand
-```
+## Webhooks & Callbacks
 
-All data stays in the browser - no network communication.
+**Incoming:**
+- None
 
-## GDPR & Privacy
+**Outgoing:**
+- None
 
-- **No data collection** - stories stored locally only
-- **No analytics** - no tracking services integrated
-- **No third-party cookies** - stateless application
-- Users maintain full ownership of their data
+## Browser APIs Used
+
+**Web Audio API:**
+- `navigator.mediaDevices.getUserMedia()` - Microphone access
+- `MediaRecorder` - Audio capture and streaming
+- `BlobEvent` - Audio data chunks
+- Implementation: `src/lib/recording.ts` lines 22-32
+
+**IndexedDB:**
+- Database operations for story persistence
+- Implementation: `src/lib/archive.ts` lines 20-127
+
+**Svelte Stores:**
+- `writable()` store for language state
+- Implementation: `src/lib/i18n.ts` line 43
+
+---
+
+*Integration audit: 2026-04-05*

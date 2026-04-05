@@ -1,81 +1,81 @@
 # Technology Stack
 
-## Languages & Runtime
+**Analysis Date:** 2026-04-05
 
-- **Primary Language:** TypeScript 5.9.3
-- **Runtime:** Node.js (via SvelteKit)
-- **Module System:** ES6 modules (`"type": "module"` in package.json)
+## Languages
 
-## Framework & Build Tools
+**Primary:**
+- TypeScript 5.9.3 - Frontend components, utilities, and configuration
+- Svelte 5.54.0 (with runes) - UI framework for reactive components
 
-### Frontend Framework
-- **Svelte 5.54.0** - Latest reactive component framework with runes-based reactivity
-  - Uses Svelte 5 runes (`$state`, `$props`) instead of previous reactive declarations
-  - Compiled component approach (not runtime dependencies)
+**Secondary:**
+- JavaScript - Configuration files (svelte.config.js)
+- HTML - Layout templates (src/app.html)
+- CSS - Component styling (inline in .svelte files)
 
-### Meta-Framework
-- **SvelteKit 2.50.2** - Full-stack framework for Svelte
-  - File-based routing in `src/routes/`
-  - SSR-capable (currently configured for static adapter)
-  - Built-in dev server with HMR
+## Runtime
 
-### Build & Dev Tools
-- **Vite 7.3.1** - Lightning-fast build tool
-  - `vite dev` - Development server with hot reload
-  - `vite build` - Production build
-  - `vite preview` - Local production preview
-  - Configured via `vite.config.ts`
+**Environment:**
+- Node.js (version not specified, uses `engine-strict=true` in .npmrc)
+- Browser (modern with Web Audio API, IndexedDB support)
 
-- **svelte-check 4.4.2** - Type checking for Svelte components
-  - Integrated with TypeScript (`tsconfig.json`)
-  - Validates `.svelte` files for type correctness
+**Package Manager:**
+- npm (with package-lock.json present)
+- Lockfile: Yes (`package-lock.json`)
 
-### Adapters
-- **@sveltejs/adapter-auto 7.0.0** - Auto-detect deployment platform
-  - Enables platform-agnostic deployment (Vercel, Netlify, Node, etc.)
-  - Currently configured as the default adapter
+## Frameworks
 
-## Client-Side Storage
+**Core:**
+- SvelteKit 2.50.2 - Full-stack meta-framework for building web applications
+- Svelte 5.54.0 - Reactive component framework (runes mode enabled by default)
 
-- **IndexedDB (browser native)** - No external dependency
-  - Used for persisting recorded audio stories with metadata
-  - Database name: `nhonly_archive`
-  - Object store: `stories` with auto-incrementing IDs
+**Build/Dev:**
+- Vite 7.3.1 - Frontend build tool and dev server
+- @sveltejs/vite-plugin-svelte 6.2.4 - Vite plugin for processing Svelte components
+- @sveltejs/adapter-auto 7.0.0 - Automatic deployment adapter selection
 
-## Web APIs Used
+**Code Quality:**
+- svelte-check 4.4.2 - Type checking for Svelte components
 
-- **Web Audio API**
-  - `navigator.mediaDevices.getUserMedia()` - Microphone access
-  - `MediaRecorder` - Audio recording and encoding
-  - Records audio as WAV blobs
+## Key Dependencies
 
-- **IndexedDB API**
-  - Browser-native key-value database
-  - Async API with promises
+**Critical:**
+- svelte/store - Reactive state management (used in `src/lib/i18n.ts` for language store)
+- Web Audio API - Browser native, for microphone recording in `src/lib/recording.ts`
+- IndexedDB - Browser native, for persistent story storage in `src/lib/archive.ts`
 
-## Package Management
+**No External Runtime Dependencies:**
+This project has zero production dependencies. All functionality uses browser native APIs (MediaRecorder, IndexedDB, getUserMedia) and Svelte's built-in stores for state management.
 
-- **npm** - Dependency manager
-- **Lock file:** `package-lock.json`
-- **Total dev dependencies:** 7 (lean stack)
+## Configuration
 
-## Development Environment
+**Environment:**
+- `.npmrc` - npm configuration with `engine-strict=true` (enforces exact Node.js version)
+- No `.env` files configured (application is client-only with no backend integration)
 
-- **TypeScript:** 5.9.3
-  - Configured via `tsconfig.json`
-  - Strict mode for type safety
+**Build:**
+- `vite.config.ts` - Minimal Vite configuration with SvelteKit plugin
+- `svelte.config.js` - SvelteKit configuration with:
+  - Runes mode enabled globally (except node_modules)
+  - Auto adapter for deployment target selection
+- `tsconfig.json` - TypeScript configuration extending `.svelte-kit/tsconfig.json` with:
+  - Strict mode enabled
+  - Source maps enabled
+  - Path rewriting for relative imports
 
-## Configuration Files
+## Platform Requirements
 
-- `svelte.config.js` - SvelteKit configuration
-- `vite.config.ts` - Vite build configuration (TypeScript)
-- `tsconfig.json` - TypeScript compiler options
-- `.svelte-kit/` - Generated types and config
+**Development:**
+- Node.js with npm
+- Modern code editor (VSCode configs present in `.vscode/`)
 
-## Notable Absence (By Design)
+**Production:**
+- Modern browser with:
+  - Web Audio API (MediaRecorder, getUserMedia)
+  - IndexedDB support
+  - ES2020+ JavaScript support
+  - Deployment via @sveltejs/adapter-auto (supports Node, Vercel, Cloudflare, AWS Lambda, etc.)
 
-- **No runtime dependencies** for business logic - all UI logic is vanilla TypeScript/Svelte
-- **No backend framework** - purely browser-based with IndexedDB
-- **No external HTTP clients** - leveraging Fetch API when needed
-- **No CSS framework** - inline CSS in components for minimal footprint
-- **No state management library** - Svelte stores and local component state
+---
+
+*Stack analysis: 2026-04-05*

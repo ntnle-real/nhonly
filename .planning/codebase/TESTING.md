@@ -1,213 +1,416 @@
-# Testing Structure & Practices
+# Testing Patterns
 
-## Current State
+**Analysis Date:** 2026-04-05
 
-**No automated tests** in the codebase.
+## Test Framework
 
-- No test files (`.test.ts`, `.spec.ts`)
-- No test runner configured (Vitest, Jest, etc.)
-- No test dependencies in `package.json`
-- Testing is manual/exploratory only
+**Status:** No test framework configured or test files found.
 
-## Testing Opportunities
+**Current State:**
+- No `jest.config.ts`, `vitest.config.ts`, or test runner configuration in project
+- No test files (`*.test.ts`, `*.spec.ts`) in `src/` directory
+- Project uses SvelteKit with Vite as build tool, but testing not yet integrated
+- Only dependent library tests exist in `node_modules/`
 
-The codebase is well-structured for testing, with clear service boundaries:
+**Implications:**
+- New tests should be configured before writing
+- No established test patterns to follow yet
+- Testing is an opportunity for fresh pattern definition
 
-### 1. Service Unit Tests (High Priority)
+## Recommended Testing Setup
 
-#### `src/lib/recording.ts`
-**What to test:**
-- `startRecording()`
-  - ✓ Successfully calls `getUserMedia()` with correct options
-  - ✗ Handles microphone permission denied
-  - ✓ Returns promise that resolves
-  - ✗ Handles already-recording state
+For a SvelteKit + TypeScript project following C3 contract patterns, the recommended testing approach:
 
-- `stopRecording()`
-  - ✓ Returns WAV blob
-  - ✗ Rejects if not recording
-  - ✓ Stops all audio tracks
-  - ✗ Handles mediaRecorder null state
+### Framework Choice
 
-- `getElapsedMs()`
-  - ✓ Returns numeric value
-  - ✗ Returns 0 if not recording
-  - ✓ Reflects actual elapsed time
+**Recommended: Vitest**
+- Native ES module support (aligns with SvelteKit)
+- Fast execution with Vite integration
+- Excellent TypeScript support
+- Compatible with C3 contract testing patterns
 
-- `isRecording()`
-  - ✓ Returns boolean
-  - ✗ Returns false if never started
-  - ✓ Returns true during recording
+**Alternative: Jest** (if needed)
+- Broader compatibility
+- More mature ecosystem
+- Requires additional config for ESM
 
-**Mock Strategy:**
+### Testing Strategy for C3 Contracts
+
+**Pattern: Contract-Driven Tests**
+
+Every function with a C3 contract gets tests organized around success/failure conditions.
+
+**Test Structure Template:**
 ```typescript
-// Mock Web Audio API
-vi.mock('navigator', () => ({
-  mediaDevices: {
-    getUserMedia: vi.fn(),
-  }
-}));
+// test: function_name.test.ts
+import { describe, it, expect } from 'vitest';
+import { functionName, functionNameContract } from './function_name';
 
-// Mock MediaRecorder
-const mockMediaRecorder = {
-  ondataavailable: null,
-  onstop: null,
-  start: vi.fn(),
-  stop: vi.fn(),
-  stream: {
-    getTracks: vi.fn(() => [{ stop: vi.fn() }])
-  }
-};
+describe('functionName', () => {
+  // SUCCESS PATH TESTS
+  describe('success conditions', () => {
+    it('succeeds with valid input', () => {
+      const result = functionName(validInput, mockObs);
+      expect(result).toBeDefined();
+    });
 
-global.MediaRecorder = vi.fn(() => mockMediaRecorder);
-```
-
-#### `src/lib/archive.ts`
-**What to test:**
-- `initDatabase()`
-  - ✓ Opens IndexedDB connection
-  - ✗ Handles database access denied
-  - ✓ Creates object store on first use
-
-- `saveStory(title, blob)`
-  - ✓ Adds story with correct properties
-  - ✓ Auto-generates ID
-  - ✗ Rejects if database not initialized
-  - ✓ Returns ID
-
-- `getAllStories()`
-  - ✓ Returns array of stories
-  - ✗ Returns empty array if error
-  - ✓ Returns all stored records
-
-- `getStory(id)`
-  - ✓ Returns matching story
-  - ✓ Returns null if not found
-  - ✗ Returns null on error
-
-**Mock Strategy:**
-```typescript
-// Mock IndexedDB
-const mockStore = {
-  add: vi.fn(() => ({ result: 1 })),
-  getAll: vi.fn(() => ({ result: [] })),
-  get: vi.fn(() => ({ result: null }))
-};
-
-const mockTransaction = {
-  objectStore: vi.fn(() => mockStore)
-};
-
-global.indexedDB = {
-  open: vi.fn((name, version) => ({
-    onerror: null,
-    onsuccess: null,
-    onupgradeneeded: null
-  }))
-};
-```
-
-#### `src/lib/i18n.ts`
-**What to test:**
-- `t(key)`
-  - ✓ Returns English string for valid key
-  - ✓ Returns English fallback for missing translation
-  - ✓ Returns key itself as last resort
-  - ✓ Respects current language setting
-
-- `setLanguage(lang)`
-  - ✓ Updates currentLanguage store
-  - ✓ Rejects invalid language values
-
-- `currentLanguage` store
-  - ✓ Initializes to 'en'
-  - ✓ Updates when setLanguage called
-  - ✓ Can subscribe to changes
-
-**Mock Strategy:**
-```typescript
-// Svelte store subscriptions
-import { get } from 'svelte/store';
-
-const lang = get(currentLanguage);
-// Test that lang is 'en' or 'vi'
-```
-
-### 2. Component Integration Tests (Medium Priority)
-
-#### `src/routes/+page.svelte`
-**What to test:**
-- Recording flow: idle → recording → stopped → archived
-- State transitions on button clicks
-- Timer updates during recording
-- Title input validation
-- Language toggle updates text
-- Status messages appear/disappear
-- Error states handled gracefully
-
-**Testing Strategy:**
-```typescript
-// Using Vitest + @testing-library/svelte
-import { render, screen, fireEvent } from '@testing-library/svelte';
-import Page from './+page.svelte';
-
-describe('+page.svelte', () => {
-  it('renders Tell your story button', () => {
-    render(Page);
-    expect(screen.getByText(/Tell your story/i)).toBeInTheDocument();
+    it('records success observations', () => {
+      const observations = [];
+      const mockObs = {
+        read: (name, value) => {},
+        step: (name) => {},
+        observe: (type, detail) => observations.push({ type, detail }),
+        return_: (name, value) => value,
+      };
+      functionName(validInput, mockObs);
+      expect(observations).toContainEqual(
+        expect.objectContaining({ type: 'success_observation' })
+      );
+    });
   });
 
-  it('transitions to recording state on click', async () => {
-    render(Page);
-    const button = screen.getByText(/Tell your story/i);
-    await fireEvent.click(button);
-    expect(screen.getByText(/Stop/i)).toBeInTheDocument();
+  // FAILURE PATH TESTS
+  describe('failure conditions', () => {
+    it('throws on invalid input', () => {
+      expect(() => functionName(invalidInput, mockObs)).toThrow();
+    });
+
+    it('records failure observations before throwing', () => {
+      const observations = [];
+      const mockObs = {
+        read: (name, value) => {},
+        step: (name) => {},
+        observe: (type, detail) => observations.push({ type, detail }),
+        return_: (name, value) => value,
+      };
+      try {
+        functionName(invalidInput, mockObs);
+      } catch {}
+      expect(observations).toContainEqual(
+        expect.objectContaining({ type: 'failure_observation' })
+      );
+    });
   });
 
-  it('displays timer during recording', async () => {
-    render(Page);
-    const button = screen.getByText(/Tell your story/i);
-    await fireEvent.click(button);
-    // Wait for timer display
-    expect(screen.getByText(/0:0[0-9]/)).toBeInTheDocument();
+  // CONTRACT VERIFICATION
+  describe('contract compliance', () => {
+    it('declares correct input/output nouns', () => {
+      expect(functionNameContract.declares).toEqual({
+        input: 'INPUT_NOUN',
+        output: 'OUTPUT_NOUN',
+      });
+    });
+
+    it('defines success conditions', () => {
+      expect(functionNameContract.succeeds_if).toBeDefined();
+      expect(functionNameContract.succeeds_if.reads).toContain('INPUT_NOUN');
+      expect(functionNameContract.succeeds_if.returns).toContain('OUTPUT_NOUN');
+    });
+
+    it('defines failure conditions', () => {
+      expect(functionNameContract.fails_if).toBeDefined();
+      expect(functionNameContract.fails_if.observes).toBeDefined();
+    });
   });
 });
 ```
 
-### 3. E2E Tests (Lower Priority)
+## Test File Organization
 
-**User Flows to Test:**
-1. Record a story from start to finish
-2. Archive multiple stories
-3. Switch language mid-recording
-4. Handle microphone permission denied
-5. Recover from recording errors
+**Location:**
+- Co-located with source: `src/lib/function_name.ts` → `src/lib/function_name.test.ts`
+- Mirrors directory structure: `src/lib/` tests → `src/lib/` alongside implementation
 
-**Tool:** Playwright or Cypress
+**Naming:**
+- `[module].test.ts` — Test file name matches module
+- Example: `archive.test.ts` for `archive.ts`
+
+**Structure:**
+```
+src/
+├── lib/
+│   ├── archive.ts
+│   ├── archive.test.ts
+│   ├── recording.ts
+│   ├── recording.test.ts
+│   ├── i18n.ts
+│   └── i18n.test.ts
+├── routes/
+│   ├── +page.svelte
+│   └── +page.test.ts
+```
+
+## Test Structure
+
+**Organizing by contract elements:**
+
 ```typescript
-// playwright.config.ts
-import { defineConfig, devices } from '@playwright/test';
+describe('functionName', () => {
+  // Contract definition (for reference)
+  const contract = functionNameContract;
 
-export default defineConfig({
-  testDir: './e2e',
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
-  },
-  use: {
-    baseURL: 'http://localhost:5173',
-  },
+  // Input fixtures
+  const validInputs = { /* ... */ };
+  const invalidInputs = { /* ... */ };
+
+  // Mock observation session
+  const createMockObs = () => ({
+    read: vi.fn(),
+    step: vi.fn(),
+    observe: vi.fn(),
+    return_: vi.fn((name, value) => value),
+  });
+
+  // SUCCESS TESTS
+  describe('success path', () => {
+    it('reads declared inputs', () => {
+      const mockObs = createMockObs();
+      functionName(validInputs, mockObs);
+      expect(mockObs.read).toHaveBeenCalledWith('INPUT_NOUN', expect.any(Object));
+    });
+
+    it('executes declared steps in order', () => {
+      const mockObs = createMockObs();
+      functionName(validInputs, mockObs);
+      expect(mockObs.step).toHaveBeenNthCalledWith(1, 'step_1_name');
+      expect(mockObs.step).toHaveBeenNthCalledWith(2, 'step_2_name');
+    });
+
+    it('records success observations', () => {
+      const mockObs = createMockObs();
+      functionName(validInputs, mockObs);
+      expect(mockObs.observe).toHaveBeenCalledWith('success_observation', expect.any(String));
+    });
+
+    it('returns declared output', () => {
+      const mockObs = createMockObs();
+      const result = functionName(validInputs, mockObs);
+      expect(mockObs.return_).toHaveBeenCalledWith('OUTPUT_NOUN', result);
+    });
+  });
+
+  // FAILURE TESTS
+  describe('failure path', () => {
+    it('throws on missing required field', () => {
+      const mockObs = createMockObs();
+      expect(() => functionName(invalidInputs.missingField, mockObs)).toThrow();
+    });
+
+    it('records failure observation before throwing', () => {
+      const mockObs = createMockObs();
+      try {
+        functionName(invalidInputs.invalid, mockObs);
+      } catch {}
+      expect(mockObs.observe).toHaveBeenCalledWith(
+        'failure_observation_name',
+        expect.any(String)
+      );
+    });
+  });
+
+  // CONTRACT VERIFICATION
+  describe('contract verification', () => {
+    it('has correct serves description', () => {
+      expect(contract.serves).toMatch(/description/);
+    });
+
+    it('declares required input/output', () => {
+      expect(contract.declares.input).toBe('INPUT_NOUN');
+      expect(contract.declares.output).toBe('OUTPUT_NOUN');
+    });
+
+    it('specifies success conditions', () => {
+      expect(contract.succeeds_if.reads).toContain('INPUT_NOUN');
+      expect(contract.succeeds_if.steps).toContain('step_1_name');
+      expect(contract.succeeds_if.observes).toContain('success_observation_name');
+      expect(contract.succeeds_if.returns).toContain('OUTPUT_NOUN');
+    });
+
+    it('specifies failure conditions', () => {
+      expect(contract.fails_if.observes).toContain('failure_observation_name');
+    });
+  });
 });
 ```
 
-## Recommended Test Setup
+## Mocking
 
-### 1. Install Test Dependencies
+**Mock Observation Session:**
+```typescript
+const createMockObs = () => ({
+  read: vi.fn(),
+  step: vi.fn(),
+  observe: vi.fn(),
+  return_: vi.fn((name, value) => value),  // Pass-through function
+});
+```
+
+**Mock External Dependencies:**
+- Browser APIs (IndexedDB, MediaRecorder): Use Vitest environment config or manual mocks
+- Async operations: Use `async/await` in tests, Vitest auto-handles promises
+
+**What to Mock:**
+- Browser APIs (MediaRecorder, IndexedDB, getUserMedia)
+- External services or APIs (if any exist)
+- Svelte stores (use `readable()`, `writable()` test instances)
+- Observation session (required for contract testing)
+
+**What NOT to Mock:**
+- Core logic (test actual function behavior)
+- Contract validation (ensure contracts are actually verified)
+- Svelte reactivity (`$:` blocks must run to test reactivity)
+
+## Fixtures and Factories
+
+**Test Data (not yet formalized, but recommended pattern):**
+
+Create `src/lib/testing.fixtures.ts`:
+```typescript
+// Test fixtures for common data shapes
+export const fixtures = {
+  validStory: {
+    title: 'My Story',
+    audioBlob: new Blob(['audio data'], { type: 'audio/wav' }),
+  },
+  invalidStory: {
+    title: '',  // Empty title fails contract
+    audioBlob: null,
+  },
+  validUser: {
+    id: '123',
+    email: 'test@example.com',
+    name: 'Test User',
+    active: true,
+  },
+  validEmail: 'user@example.com',
+  invalidEmail: 'not-an-email',
+};
+```
+
+**Factory Pattern (for complex objects):**
+```typescript
+export function createMockRecordingSession(overrides = {}): RecordingSession {
+  return {
+    isRecording: false,
+    elapsedMs: 0,
+    audioBlob: null,
+    ...overrides,
+  };
+}
+```
+
+**Location:** `src/lib/testing.fixtures.ts` — Shared test utilities
+
+## Coverage
+
+**Targets (to establish):**
+- Statement coverage: Aim for 80%+
+- Branch coverage: Aim for 75%+ (contract success/failure paths)
+- Function coverage: Aim for 90%+ (every exported function tested)
+
+**View Coverage Command (once configured):**
 ```bash
-npm install --save-dev vitest @testing-library/svelte jsdom
+npm run test:coverage
+# or
+vitest run --coverage
 ```
 
-### 2. Create `vitest.config.ts`
+**Configuration (Vitest + c8):**
+```typescript
+// vitest.config.ts
+export default defineConfig({
+  test: {
+    coverage: {
+      provider: 'c8',
+      reporter: ['text', 'html'],
+      exclude: ['node_modules/', 'dist/'],
+    },
+  },
+});
+```
+
+## Test Types
+
+**Unit Tests:**
+- Scope: Individual functions (archive.ts exports, recording.ts exports)
+- Approach: Test contract compliance, success/failure paths, observable outcomes
+- Examples: `archive.test.ts` tests `saveStory()`, `getStory()`, `initDatabase()` in isolation
+
+**Integration Tests:**
+- Scope: Multiple modules working together (e.g., startRecording → saveStory → archive)
+- Approach: Test full user workflows, state transitions, async coordination
+- Example: "User records story, stops recording, archives with title" integration test
+
+**Svelte Component Tests:**
+- Framework: Svelte testing library (or vitest-dom for assertions)
+- Pattern: Test props, reactive state, event dispatch
+- Example: `+page.test.svelte` tests recording state machine transitions
+
+**E2E Tests:**
+- Not currently configured
+- Could use Playwright or Cypress for browser automation
+- Out of scope for initial test setup
+
+## Common Patterns
+
+**Async Testing:**
+```typescript
+it('saves story to database', async () => {
+  const mockObs = createMockObs();
+  const id = await saveStory('Story Title', audioBlob);
+  expect(id).toBeGreaterThan(0);
+  expect(mockObs.return_).toHaveBeenCalledWith('story_id', id);
+});
+```
+
+**Error Testing:**
+```typescript
+it('throws when database not initialized', async () => {
+  const mockObs = createMockObs();
+  await expect(
+    saveStory('Title', audioBlob)
+  ).rejects.toThrow('Database not initialized');
+});
+
+it('records error observation before throwing', async () => {
+  const mockObs = createMockObs();
+  try {
+    await functionWithError(invalidInput, mockObs);
+  } catch (e) {}
+  expect(mockObs.observe).toHaveBeenCalledWith('database_error', expect.any(String));
+});
+```
+
+**Promise/Async Pattern:**
+```typescript
+// Test function that returns Promise<T>
+it('resolves with story data', async () => {
+  const story = await getStory(1);
+  expect(story).toEqual(expect.objectContaining({ id: 1, title: '...' }));
+});
+
+// Test rejection
+it('rejects when ID invalid', async () => {
+  await expect(getStory(-1)).rejects.toThrow();
+});
+```
+
+**Observation Sequence Testing:**
+```typescript
+it('executes steps in correct order', () => {
+  const mockObs = createMockObs();
+  const callOrder = [];
+  mockObs.step.mockImplementation((name) => callOrder.push(name));
+  
+  transformUser(validUser, mockObs);
+  
+  expect(callOrder).toEqual(['extract_fields', 'normalize_email', 'validate_user']);
+});
+```
+
+## Test Configuration (TODO)
+
+**File: `vitest.config.ts` (to create)**
 ```typescript
 import { defineConfig } from 'vitest/config';
 import { sveltekit } from '@sveltejs/kit/vite';
@@ -215,124 +418,36 @@ import { sveltekit } from '@sveltejs/kit/vite';
 export default defineConfig({
   plugins: [sveltekit()],
   test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./src/tests/setup.ts'],
+    globals: true,  // Use describe/it/expect without imports
+    environment: 'jsdom',  // Browser environment for DOM tests
+    include: ['src/**/*.test.ts', 'src/**/*.test.svelte'],
+    coverage: {
+      provider: 'c8',
+      reporter: ['text', 'html'],
+    },
   },
 });
 ```
 
-### 3. Create Test Files Structure
-```
-src/
-├── lib/
-│   ├── __tests__/
-│   │   ├── recording.test.ts
-│   │   ├── archive.test.ts
-│   │   └── i18n.test.ts
-│   ├── recording.ts
-│   ├── archive.ts
-│   └── i18n.ts
-└── routes/
-    └── __tests__/
-        └── +page.test.ts
-```
-
-### 4. Add Test Scripts to `package.json`
+**File: `package.json` scripts (to add)**
 ```json
 {
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest run --coverage"
   }
 }
 ```
 
-## Testing Challenges
+## Next Steps
 
-### 1. Browser APIs
-- **Web Audio API** - Requires mocking MediaRecorder and getUserMedia
-- **IndexedDB** - Requires fake-indexeddb or similar library
-- **setTimeout/setInterval** - Use `vi.useFakeTimers()` for timer tests
+1. Install Vitest: `npm install -D vitest @vitest/ui c8`
+2. Create `vitest.config.ts` with configuration above
+3. Update `package.json` with test scripts
+4. Create first test file following contract testing pattern
+5. Run `npm test` to verify setup
 
-### 2. Async Operations
-- Recording state is async
-- Database operations are async
-- Use `await` in tests and handle promises properly
+---
 
-### 3. Browser Context
-- Tests run in JSDOM or happy-dom (not real browser)
-- Some Web Audio features may be unavailable
-- Consider Playwright for browser E2E tests
-
-## Code Coverage Targets
-
-**Recommended coverage:**
-- Statements: 80%
-- Branches: 75%
-- Functions: 80%
-- Lines: 80%
-
-**Current coverage:** 0% (no tests)
-
-## Manual Testing Checklist
-
-Until automated tests are added, manual testing should cover:
-
-### Recording Flow
-- [ ] Click "Tell your story" button
-- [ ] Verify microphone permission prompt appears
-- [ ] Verify timer starts and increments
-- [ ] Click "Stop" button
-- [ ] Verify recording stops and state changes
-- [ ] Enter story title
-- [ ] Click "Archive" button
-- [ ] Verify success message appears
-
-### Language Switching
-- [ ] Click language toggle button
-- [ ] Verify all text changes to Vietnamese/English
-- [ ] Record story in Vietnamese
-- [ ] Record story in English
-- [ ] Verify title placeholder changes
-
-### Error Cases
-- [ ] Deny microphone permission → verify error message
-- [ ] Click "Archive" without title → verify validation message
-- [ ] Close browser console, check for unexpected errors
-
-### Data Persistence
-- [ ] Record and archive a story
-- [ ] Refresh page with F5
-- [ ] Verify story still exists in database
-- [ ] Open DevTools → Application → IndexedDB → nhonly_archive
-
-## Testing Best Practices
-
-1. **Test behavior, not implementation** - Test what users see, not how it works
-2. **Use meaningful test names** - Describe what's being tested and expected outcome
-3. **Arrange-Act-Assert** - Organize tests into setup, action, verification
-4. **Mock external APIs** - Isolate code under test from browser APIs
-5. **Test error paths** - Not just happy path
-6. **Keep tests independent** - No test should depend on another test's data
-7. **Use factories for test data** - Create reusable test fixtures
-
-## Future Testing Strategy
-
-**Phase 1 (Critical):**
-- Service unit tests (recording, archive, i18n)
-- Mock browser APIs properly
-- Aim for 80%+ coverage of services
-
-**Phase 2 (Important):**
-- Component integration tests
-- Test UI state machine flows
-- Test error handling in components
-
-**Phase 3 (Nice-to-have):**
-- E2E tests for critical user flows
-- Performance tests for recording large files
-- Accessibility tests (a11y)
+*Testing analysis: 2026-04-05*
