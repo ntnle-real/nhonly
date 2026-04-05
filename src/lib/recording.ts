@@ -3,7 +3,8 @@
 // Success: startRecording() begins capture, pauseRecording() pauses without losing audio, resumeRecording() continues, stopRecording() returns complete Blob
 // Failure: Permission denied, recording not started, or MediaRecorder error
 
-import { ObservationSession, createObservationSession } from './obs';
+import type { ObservationSession } from './obs';
+import { createObservationSession } from './obs';
 import { RecordingError, classifyError } from './errors';
 
 // Contract interfaces matching kernel/CONTRACTS.md TypeScript template

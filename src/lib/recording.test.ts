@@ -53,22 +53,26 @@ class MockMediaRecorder {
 
 // Setup: Mock navigator APIs
 beforeEach(() => {
-	global.MediaRecorder = MockMediaRecorder as any;
+	const globalAny = globalThis as any;
+	globalAny.MediaRecorder = MockMediaRecorder as any;
 
 	// Mock getUserMedia
-	global.navigator.mediaDevices = {
-		getUserMedia: vi.fn(async () => ({
-			getTracks: () => [{ stop: vi.fn() }]
-		}))
+	globalAny.navigator = {
+		mediaDevices: {
+			getUserMedia: vi.fn(async () => ({
+				getTracks: () => [{ stop: vi.fn() }]
+			}))
+		}
 	} as any;
 
 	// Mock window.setInterval (for timer)
-	global.window.setInterval = vi.fn((cb, ms) => {
-		const id = Math.random();
-		return id as any;
-	});
-
-	global.window.clearInterval = vi.fn();
+	globalAny.window = {
+		setInterval: vi.fn((cb: any, ms: number) => {
+			const id = Math.random();
+			return id as any;
+		}),
+		clearInterval: vi.fn()
+	};
 
 	// Reset recording state by calling cancelRecording
 	// (Note: elapsedMs is module-scoped, so we cancel to reset it)

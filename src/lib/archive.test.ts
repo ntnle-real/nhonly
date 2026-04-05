@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { ArchivedStory } from './archive';
 import {
 	initDatabase,
 	saveStory,
 	getAllStories,
 	getStory,
-	ArchivedStory,
 	__testResetDatabase
 } from './archive';
 
@@ -83,7 +83,8 @@ beforeEach(() => {
 	// Keep a reference to the database so multiple calls to open() return the same instance
 	let mockDb: MockIDBDatabase | null = null;
 
-	(global as any).indexedDB = {
+	const globalAny = globalThis as any;
+	globalAny.indexedDB = {
 		open: vi.fn((name: string, version: number) => {
 			const request = new MockIDBRequest<MockIDBDatabase>();
 			// Create database only on first call, reuse on subsequent calls

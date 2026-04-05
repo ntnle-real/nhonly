@@ -3,7 +3,8 @@
 // Success: accept blob + title → store in IndexedDB with timestamp → return archive ID
 // Failure: database access denied, quota exceeded, or write transaction fails
 
-import { ObservationSession, createObservationSession } from './obs';
+import type { ObservationSession } from './obs';
+import { createObservationSession } from './obs';
 import { StorageError, classifyError } from './errors';
 
 // Contract interfaces
