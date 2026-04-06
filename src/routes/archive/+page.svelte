@@ -120,7 +120,10 @@
 <div class="relative w-full min-h-screen bg-teal-deep flex flex-col">
 	<!-- Header -->
 	<header class="flex justify-between items-center px-6 py-4 border-b border-white/8">
-		<span class="font-display text-sm font-semibold tracking-[0.12em] text-teal-light">Nhơn Lý</span>
+		<div class="flex items-center gap-4">
+			<a href="/" class="font-body text-sm text-white/50 hover:text-white/80 transition-colors">← {$currentLanguage === 'en' ? 'Home' : 'Trang chủ'}</a>
+			<span class="font-display text-sm font-semibold tracking-[0.12em] text-teal-light">Nhơn Lý</span>
+		</div>
 		<button
 			onclick={toggleLanguage}
 			class="px-3 py-1 text-xs font-semibold tracking-widest text-white/50 border border-white/20 rounded hover:text-white/80 hover:border-white/40 transition-colors cursor-pointer"
