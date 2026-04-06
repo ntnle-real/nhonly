@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 2
-status: unknown
-last_updated: "2026-04-05T16:00:03.141Z"
+current_phase: 02
+status: executing
+last_updated: "2026-04-06T20:28:06.000Z"
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 1
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 8
+  completed_plans: 6
 ---
 
 # Project State & Context
@@ -17,9 +17,9 @@ progress:
 ## Current Status
 
 - **Milestone:** 1 — Recording & Local Archiving
-- **Current Phase:** 2
-- **Phase Status:** Executing, Plan 01-03b complete (UI Integration)
-- **Session Date:** 2026-04-05 (Plans 01-01 → 01-03b complete)
+- **Current Phase:** 02 — Archive Browser
+- **Phase Status:** Executing, Plan 02-01 complete (Service Layer + i18n Foundation)
+- **Session Date:** 2026-04-06 (Plan 02-01 complete)
 
 ## Key Decisions Made
 
@@ -157,8 +157,9 @@ progress:
    - HTTPS certificate: Cloudflare managed (automatic) ✓
 
 **Live Site:**
+
 - **URL:** https://nhon-ly.org
-- **Status:** ✅ Public, accessible worldwide
+- **Status:** Executing Phase 02
 - **SSL/TLS:** Cloudflare managed (automatic renewal)
 - **Backend:** Node.js server on localhost:3000 via Cloudflare Tunnel
 - **Uptime:** Auto-restart on crash, survives reboots
@@ -168,7 +169,29 @@ progress:
   - Language preference persisted to localStorage
   - i18n fix: converted t() to synchronous function with store-based tracking
 
+### Phase 2 Progress (Archive Browser)
+
+**Plan 02-01: Service Layer + i18n Foundation (COMPLETE 2026-04-06)**
+
+1. ✓ Extended ArchivedStory interface with durationMs: number
+2. ✓ Updated saveStory() signature to accept durationMs parameter
+3. ✓ Created archive.service.ts with C3 contracts:
+   - readAndSortStories() — reads, sorts newest-first, formats dates/durations
+   - deleteStory() — permanently removes story from IndexedDB
+4. ✓ Added all 16 Phase 2 i18n keys (vi and en):
+   - Archive UI strings (nav, empty state, header, count)
+   - Playback strings (close, replay, error states)
+   - Delete confirmation strings (heading, body, buttons, success)
+5. ✓ Landing page Archive button added (secondary CTA, links to /archive route)
+
+**Duration:** 6 minutes 23 seconds | **Commits:** 5 | **Files Modified:** 5
+
+**Upcoming Plans:**
+- 02-02: Archive Browser UI (story list, playback, delete modal components)
+- 02-03+: Additional archive features (search, export, cloud sync)
+
 **Previous Security Hardening Plans:**
+
 - `/planning/DEPLOYMENT_PHASE_2.md` — Available for future implementation
 - `/planning/PHASE_2_EXECUTION_GUIDE.md` — Available for future implementation
 - (Deprioritized in favor of getting site live for iteration)
