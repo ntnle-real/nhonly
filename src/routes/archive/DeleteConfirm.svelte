@@ -20,12 +20,6 @@
 		}
 	}
 
-	function handleOverlayClick(e: MouseEvent): void {
-		if (e.target === e.currentTarget) {
-			onCancel();
-		}
-	}
-
 	onMount(() => {
 		// Prevent scroll behind modal
 		document.body.style.overflow = 'hidden';
@@ -39,13 +33,23 @@
 
 <!-- Modal Overlay -->
 <div
-	onclick={handleOverlayClick}
-	class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+	role="dialog"
+	aria-modal="true"
+	aria-labelledby="delete-heading"
+	class="fixed inset-0 flex items-center justify-center z-50"
 >
+	<!-- Backdrop -->
+	<button
+		type="button"
+		onclick={onCancel}
+		aria-label="Close dialog"
+		class="absolute inset-0 bg-black/50 cursor-default"
+	></button>
+
 	<!-- Modal Card -->
-	<div class="bg-teal max-w-xs w-full mx-4 p-6 rounded-lg">
+	<div class="relative bg-teal max-w-xs w-full mx-4 p-6 rounded-lg z-10">
 		<!-- Heading -->
-		<h2 class="font-display text-2xl text-rust font-semibold mb-4">
+		<h2 id="delete-heading" class="font-display text-2xl text-rust font-semibold mb-4">
 			{translate(currentLanguage, 'delete_heading')}
 		</h2>
 

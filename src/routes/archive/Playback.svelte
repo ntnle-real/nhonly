@@ -157,15 +157,17 @@
 
 		<!-- Progress bar -->
 		<div class="w-full max-w-sm mb-4">
-			<div
+			<button
+				type="button"
 				onclick={handleProgressBarClick}
+				aria-label="Seek audio position"
 				class="w-full h-1 bg-white/10 rounded-full cursor-pointer hover:h-1.5 transition-all"
 			>
 				<div
 					class="h-full bg-teal-light rounded-full"
 					style="width: {duration > 0 ? (currentTime / duration) * 100 : 0}%"
 				></div>
-			</div>
+			</button>
 		</div>
 
 		<!-- Time display -->
