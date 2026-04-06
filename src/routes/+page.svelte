@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { currentLanguage, t, setLanguage } from '$lib/i18n';
+	import { currentLanguage, t, translate, setLanguage } from '$lib/i18n';
 	import { checkBrowserCapabilities, assertBrowserSupported } from '$lib/capabilities';
 	import { classifyError } from '$lib/errors';
 	import { startRecording, pauseRecording, resumeRecording, stopRecording, cancelRecording, getElapsedMs } from '$lib/recording';
@@ -245,7 +245,7 @@
 <div class="container">
 	<!-- Header -->
 	<header class="header">
-		<h1>{t('app_title')}</h1>
+		<h1>{translate($currentLanguage, 'app_title')}</h1>
 		<button onclick={toggleLanguage} class="lang-toggle">
 			{$currentLanguage === 'en' ? 'VI' : 'EN'}
 		</button>
@@ -257,27 +257,27 @@
 			<!-- Error State -->
 			<div class="error-box">
 				<div class="error-icon">⚠️</div>
-				<h2>{t('error_occurred')}</h2>
+				<h2>{translate($currentLanguage, 'error_occurred')}</h2>
 				<p>{errorMessage}</p>
 				{#if errorType === 'permission'}
-					<p class="error-detail">{t('microphone_required')}</p>
+					<p class="error-detail">{translate($currentLanguage, 'microphone_required')}</p>
 				{:else if errorType === 'browser'}
-					<p class="error-detail">{t('browser_old')}</p>
+					<p class="error-detail">{translate($currentLanguage, 'browser_old')}</p>
 				{:else if errorType === 'storage'}
-					<p class="error-detail">{t('storage_full')}</p>
+					<p class="error-detail">{translate($currentLanguage, 'storage_full')}</p>
 				{/if}
 				<button onclick={handleCancel} class="btn btn-primary">
-					{t('try_again')}
+					{translate($currentLanguage, 'try_again')}
 				</button>
 			</div>
 
 		{:else if recordingState === 'idle' && !audioBlob}
 			<!-- Idle State -->
 			<div class="idle-box">
-				<h2>{t('tell_story')}</h2>
+				<h2>{translate($currentLanguage, 'tell_story')}</h2>
 				<p class="subtitle">Share your story with your family</p>
 				<button onclick={handleStartRecording} class="btn btn-primary btn-large">
-					🎤 {t('tell_story')}
+					🎤 {translate($currentLanguage, 'tell_story')}
 				</button>
 			</div>
 
@@ -285,7 +285,7 @@
 			<!-- Recording State -->
 			<div class="recording-box">
 				<div class="status-indicator recording-pulsing">
-					<span>{t('recording')}</span>
+					<span>{translate($currentLanguage, 'recording')}</span>
 				</div>
 
 				<div class="timer">{formattedTime}</div>
@@ -294,10 +294,10 @@
 
 				<div class="controls">
 					<button onclick={handlePauseRecording} class="btn btn-secondary">
-						⏸ {t('pause')}
+						⏸ {translate($currentLanguage, 'pause')}
 					</button>
 					<button onclick={handleStopRecording} class="btn btn-danger">
-						⏹ {t('stop_recording')}
+						⏹ {translate($currentLanguage, 'stop_recording')}
 					</button>
 				</div>
 			</div>
@@ -306,7 +306,7 @@
 			<!-- Paused State -->
 			<div class="recording-box">
 				<div class="status-indicator paused-indicator">
-					<span>{t('paused')}</span>
+					<span>{translate($currentLanguage, 'paused')}</span>
 				</div>
 
 				<div class="timer">{formattedTime}</div>
@@ -315,10 +315,10 @@
 
 				<div class="controls">
 					<button onclick={handleResumeRecording} class="btn btn-secondary">
-						▶ {t('resume')}
+						▶ {translate($currentLanguage, 'resume')}
 					</button>
 					<button onclick={handleStopRecording} class="btn btn-danger">
-						⏹ {t('stop_recording')}
+						⏹ {translate($currentLanguage, 'stop_recording')}
 					</button>
 				</div>
 			</div>
@@ -326,7 +326,7 @@
 		{:else if recordingState === 'stopped'}
 			<!-- Stopped/Preview State -->
 			<div class="preview-box">
-				<h2>{t('preview')}</h2>
+				<h2>{translate($currentLanguage, 'preview')}</h2>
 				<div class="preview-player">
 					{#if previewURL}
 						<audio controls src={previewURL}></audio>
@@ -335,10 +335,10 @@
 
 				<div class="controls">
 					<button onclick={handleRecordAgain} class="btn btn-secondary">
-						🔄 {t('record_again')}
+						🔄 {translate($currentLanguage, 'record_again')}
 					</button>
 					<button onclick={handleShowPreview} class="btn btn-primary">
-						✅ {t('preview')}
+						✅ {translate($currentLanguage, 'preview')}
 					</button>
 				</div>
 			</div>
@@ -346,21 +346,21 @@
 		{:else if recordingState === 'preview'}
 			<!-- Save Form State -->
 			<div class="form-box">
-				<h2>{t('story_title')}</h2>
+				<h2>{translate($currentLanguage, 'story_title')}</h2>
 				<input
 					type="text"
 					bind:value={storyTitle}
-					placeholder={t('enter_title')}
+					placeholder={translate($currentLanguage, 'enter_title')}
 					class="input-title"
 					maxlength="100"
 				/>
 
 				<div class="controls">
 					<button onclick={handleCancel} class="btn btn-secondary">
-						✕ {t('cancel')}
+						✕ {translate($currentLanguage, 'cancel')}
 					</button>
 					<button onclick={handleArchiveStory} class="btn btn-primary">
-						💾 {t('archive_button')}
+						💾 {translate($currentLanguage, 'archive_button')}
 					</button>
 				</div>
 			</div>
@@ -369,14 +369,14 @@
 			<!-- Saving State -->
 			<div class="saving-box">
 				<div class="spinner"></div>
-				<h2>{t('saving_story')}</h2>
+				<h2>{translate($currentLanguage, 'saving_story')}</h2>
 			</div>
 
 		{:else if recordingState === 'saved'}
 			<!-- Saved State -->
 			<div class="saved-box">
 				<div class="checkmark">✓</div>
-				<h2>{t('save_confirmation')}</h2>
+				<h2>{translate($currentLanguage, 'save_confirmation')}</h2>
 			</div>
 		{/if}
 	</main>

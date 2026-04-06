@@ -120,19 +120,26 @@ export function setLanguage(lang: Language): void {
 	}
 }
 
-// Get current language synchronously
+// Get current language synchronously (for non-reactive contexts)
 let currentLang: Language = 'en';
 currentLanguage.subscribe((lang) => {
 	currentLang = lang;
 });
 
 /**
- * Synchronous translation function for use in component logic
- * For reactive translations in templates, use $t('key') instead
+ * Synchronous translation — for component logic (event handlers, etc.)
  */
 export function t(key: string): string {
-	if (strings[currentLang][key as keyof typeof strings[Language]]) {
-		return strings[currentLang][key as keyof typeof strings[Language]];
+	return translate(currentLang, key);
+}
+
+/**
+ * Reactive translation — pass $currentLanguage to make templates re-render on language change.
+ * Usage in Svelte 5 templates: {translate($currentLanguage, 'key')}
+ */
+export function translate(lang: Language, key: string): string {
+	if (strings[lang][key as keyof typeof strings[Language]]) {
+		return strings[lang][key as keyof typeof strings[Language]];
 	}
 	// Fallback to English
 	if (strings['en'][key as keyof typeof strings['en']]) {
