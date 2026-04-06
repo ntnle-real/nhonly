@@ -27,6 +27,7 @@
 
 	function toggleLanguage(): void {
 		setLanguage($currentLanguage === 'en' ? 'vi' : 'en');
+		loadStories();
 	}
 
 	async function loadStories(): Promise<void> {
@@ -103,13 +104,6 @@
 	onMount(async () => {
 		await initDatabase();
 		loadStories();
-	});
-
-	// Reload stories when language changes
-	$effect(() => {
-		if (!isLoading) {
-			loadStories();
-		}
 	});
 
 	let selectedStory: Story | null = $state(null);
