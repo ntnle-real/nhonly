@@ -45,7 +45,26 @@ const strings: Record<Language, Record<string, string>> = {
 		landing_headline: 'Giữ gìn ký ức quê hương',
 		landing_sub: 'Kể câu chuyện của bạn cho thế hệ mai sau',
 		landing_cta: 'Bắt đầu khi bạn sẵn sàng',
-		saved_log: 'Đã lưu vào kho lưu trữ'
+		saved_log: 'Đã lưu vào kho lưu trữ',
+
+		// Archive UI — Phase 2
+		archive_nav: 'Lưu trữ',
+		archive_empty_headline: 'Kho lưu trữ của bạn còn trống',
+		archive_empty_body: 'Các chuyện bạn ghi âm sẽ xuất hiện ở đây. Hãy bắt đầu bằng cách ghi âm chuyện đầu tiên.',
+		archive_empty_cta: 'Ghi âm chuyện đầu tiên',
+		archive_header: 'Các chuyện của bạn',
+		archive_count_singular: '{count} chuyện',
+		archive_count_plural: '{count} chuyện',
+		playback_close: '✕',
+		playback_replay: '↻',
+		delete_heading: 'Xóa chuyện này?',
+		delete_body: 'Chuyện này sẽ bị xóa vĩnh viễn. Hành động này không thể hoàn tác.',
+		delete_confirm: 'Xóa',
+		delete_cancel: 'Giữ lại',
+		delete_success: 'Chuyện đã bị xóa',
+		playback_error_heading: 'Không thể phát chuyện',
+		playback_error_body: 'Tệp âm thanh có thể bị hỏng. Hãy thử một chuyện khác hoặc ghi âm lại.',
+		playback_error_cta: 'Quay lại kho lưu trữ'
 	},
 	en: {
 		// App header
@@ -85,7 +104,26 @@ const strings: Record<Language, Record<string, string>> = {
 		landing_headline: 'Preserving the memories of home',
 		landing_sub: 'Tell your story for generations to come',
 		landing_cta: 'Begin when you are ready',
-		saved_log: 'Added to the archive'
+		saved_log: 'Added to the archive',
+
+		// Archive UI — Phase 2
+		archive_nav: 'Archive',
+		archive_empty_headline: 'Your archive is empty',
+		archive_empty_body: 'Stories you record will appear here. Begin by recording your first story.',
+		archive_empty_cta: 'Record your first story',
+		archive_header: 'Your stories',
+		archive_count_singular: '{count} story',
+		archive_count_plural: '{count} stories',
+		playback_close: '✕',
+		playback_replay: '↻',
+		delete_heading: 'Delete this story?',
+		delete_body: 'This story will be permanently deleted. This action cannot be undone.',
+		delete_confirm: 'Delete',
+		delete_cancel: 'Keep',
+		delete_success: 'Story deleted',
+		playback_error_heading: 'Could not play story',
+		playback_error_body: 'The audio file may be corrupted. Try another story or re-record.',
+		playback_error_cta: 'Return to archive'
 	}
 };
 
