@@ -16,7 +16,7 @@
 		"coverage": "vitest --coverage"
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-auto": "^7.0.0",
+		"@sveltejs/adapter-node": "^5.5.4",
 		"@sveltejs/kit": "^2.50.2",
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
 		"@testing-library/svelte": "^4.0.0",

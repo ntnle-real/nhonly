@@ -74,7 +74,7 @@ progress:
 **Maintained By:** Claude Haiku 4.5
 **Version:** 2.0
 
-## Phase 1 Progress
+## Phase 1 Progress (App Features)
 
 **Plans Completed:**
 
@@ -96,20 +96,74 @@ progress:
    - 0 TypeScript errors, production build passes
 5. ○ 01-04: Acceptance criteria verification document (pending)
 
-**Current State:** Plan 01-03b complete. All core features implemented and tested.
-
-**Infrastructure Complete:**
-
-- ✓ Waveform visualization service (01-03)
-- ✓ Audio preview management (01-03)
-- ✓ C3 contracts throughout (fully traced)
-- ✓ Recording state machine (01-03b)
-- ✓ Error handling layer (01-03b)
-- ✓ Bilingual i18n setup (01-03b)
-- ✓ Tests: 58/58 waveform tests passing
-
-**Outstanding for Phase 1:**
-
-- 01-04: Final acceptance criteria verification
-
 **Sign-Off Status:** Plans 01-01 through 01-03b complete; UI fully functional with all required features
+
+---
+
+## Infrastructure Deployment Progress
+
+### Phase 1: Production Deployment (2026-04-06)
+
+**Completed Steps:**
+
+1. ✓ **Step 1**: Swap SvelteKit adapter
+   - Removed: @sveltejs/adapter-auto
+   - Added: @sveltejs/adapter-node
+   - Updated: svelte.config.js with new adapter import
+
+2. ✓ **Step 2**: Production build
+   - Executed: `npm run build`
+   - Output: `build/` directory with Node.js server
+   - Entry point: `build/index.js`
+   - Build verified: responds to curl requests
+
+3. ✓ **Step 3**: launchd service creation
+   - Created: ~/Library/LaunchAgents/org.nhonly.app.plist
+   - Configured: PORT=3000, HOST=127.0.0.1, NODE_ENV=production
+   - Loaded: `launchctl load ~/Library/LaunchAgents/org.nhonly.app.plist`
+   - Status: Healthy (PID 77785, exit code 0)
+   - Logs: ~/nhonly/logs/app.log, app.error.log
+
+4. ✓ **Step 4**: Caddy reverse proxy (partial)
+   - Updated: /opt/homebrew/etc/Caddyfile
+   - Status: Config updated; legacy process issue (can work around with direct port 3000)
+   - Workaround: App directly accessible on 10.0.0.245:3000 (no proxy needed yet)
+
+5. ✓ **Step 5**: Verification
+   - localhost:3000 ✓ (127.0.0.1:3000)
+   - Local network:3000 ✓ (10.0.0.245:3000)
+   - App responds with full HTML UI
+   - Ready for testing from personal machine
+
+### Phase 2: Public Deployment via Cloudflare Tunnel (✅ COMPLETE 2026-04-06)
+
+**Completed:**
+
+1. ✓ Configured Cloudflare Tunnel
+   - Tunnel ID: d2e9124a-1b14-413d-9672-7dd0ffb7b3fc
+   - Updated config: localhost:4100 → localhost:3000
+   - Route: nhon-ly.org → localhost:3000 (via Cloudflare Tunnel)
+   - Status: 4 QUIC connections active to Cloudflare edge
+
+2. ✓ Enabled cloudflared daemon persistence
+   - Updated: ~/Library/LaunchAgents/com.cloudflare.cloudflared.plist
+   - Added: tunnel run command + tunnel ID
+   - Service: Auto-restart on crash, runs at boot
+   - Status: Running (PID 81343, exit code 0)
+
+3. ✓ Verified public accessibility
+   - `curl https://nhon-ly.org` → HTTP/2 200 ✓
+   - Full app HTML served through Cloudflare ✓
+   - HTTPS certificate: Cloudflare managed (automatic) ✓
+
+**Live Site:**
+- **URL:** https://nhon-ly.org
+- **Status:** Public, accessible worldwide
+- **SSL/TLS:** Cloudflare managed (automatic renewal)
+- **Backend:** Node.js server on localhost:3000 via Cloudflare Tunnel
+- **Uptime:** Auto-restart on crash, survives reboots
+
+**Previous Security Hardening Plans:**
+- `/planning/DEPLOYMENT_PHASE_2.md` — Available for future implementation
+- `/planning/PHASE_2_EXECUTION_GUIDE.md` — Available for future implementation
+- (Deprioritized in favor of getting site live for iteration)

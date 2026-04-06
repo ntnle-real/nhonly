@@ -2,7 +2,7 @@
 // Purpose: Provide centralized bilingual strings for nhonly UI
 // Vietnamese-English support as core feature, not afterthought
 
-import { writable } from 'svelte/store';
+import { writable, derived } from 'svelte/store';
 
 export type Language = 'vi' | 'en';
 
@@ -80,6 +80,9 @@ const strings: Record<Language, Record<string, string>> = {
 // Reactive language store
 export const currentLanguage = writable<Language>('en');
 
+// Derived store that provides current language strings
+export const currentStrings = derived(currentLanguage, ($lang) => strings[$lang]);
+
 /**
  * Initialize language based on system preference or stored preference.
  * Called on app mount in +layout.svelte
@@ -117,21 +120,23 @@ export function setLanguage(lang: Language): void {
 	}
 }
 
-// Getter function: contract for UI text access
-// Success: key exists in current language, returns string
-// Failure: returns fallback to English if key missing
-export function t(key: string): string {
-	let lang: Language = 'en';
-	currentLanguage.subscribe((l) => {
-		lang = l;
-	})();
+// Get current language synchronously
+let currentLang: Language = 'en';
+currentLanguage.subscribe((lang) => {
+	currentLang = lang;
+});
 
-	if (strings[lang][key as keyof typeof strings[Language]]) {
-		return strings[lang][key as keyof typeof strings[Language]];
+/**
+ * Synchronous translation function for use in component logic
+ * For reactive translations in templates, use $t('key') instead
+ */
+export function t(key: string): string {
+	if (strings[currentLang][key as keyof typeof strings[Language]]) {
+		return strings[currentLang][key as keyof typeof strings[Language]];
 	}
 	// Fallback to English
 	if (strings['en'][key as keyof typeof strings['en']]) {
 		return strings['en'][key as keyof typeof strings['en']];
 	}
-	return key; // Last resort: return key itself
+	return key;
 }
