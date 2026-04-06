@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { currentLanguage, translate, setLanguage } from '$lib/i18n';
 	import { readAndSortStories, deleteStory } from '$lib/archive.service';
+	import { initDatabase } from '$lib/archive';
 	import StoryList from './StoryList.svelte';
 	import Playback from './Playback.svelte';
 	import DeleteConfirm from './DeleteConfirm.svelte';
@@ -99,7 +100,8 @@
 	}
 
 	// Load stories on mount
-	onMount(() => {
+	onMount(async () => {
+		await initDatabase();
 		loadStories();
 	});
 

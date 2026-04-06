@@ -5,7 +5,7 @@
 	import { startRecording, pauseRecording, resumeRecording, stopRecording, cancelRecording } from '$lib/recording';
 	import { startWaveformAnalysis, stopWaveformAnalysis } from '$lib/waveform';
 	import { createPreviewURL, revokePreviewURL } from '$lib/preview';
-	import { saveStory } from '$lib/archive';
+	import { saveStory, initDatabase } from '$lib/archive';
 	import Waveform from '$lib/waveform.svelte';
 
 	type Scene = 'landing' | 'recording' | 'paused' | 'stopped' | 'saving' | 'saved' | 'error';
@@ -159,6 +159,7 @@
 		} catch (_) { /* best effort */ }
 	}
 
+	onMount(async () => { await initDatabase(); });
 	onDestroy(async () => { await cleanup(); });
 </script>
 
