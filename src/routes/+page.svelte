@@ -122,7 +122,7 @@
 		if (!audioBlob || !storyTitle.trim()) return;
 		try {
 			scene = 'saving';
-			await saveStory(storyTitle, audioBlob);
+			await saveStory(storyTitle, audioBlob, savedDurationMs);
 			savedTitle = storyTitle;
 			savedAt = new Date();
 			revokePreviewURL();
