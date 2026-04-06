@@ -48,6 +48,7 @@ const strings: Record<Language, Record<string, string>> = {
 		saved_log: 'Đã lưu vào kho lưu trữ',
 
 		// Archive UI — Phase 2
+		home_nav: 'Trang chủ',
 		archive_nav: 'Lưu trữ',
 		archive_empty_headline: 'Kho lưu trữ của bạn còn trống',
 		archive_empty_body: 'Các chuyện bạn ghi âm sẽ xuất hiện ở đây. Hãy bắt đầu bằng cách ghi âm chuyện đầu tiên.',
@@ -107,6 +108,7 @@ const strings: Record<Language, Record<string, string>> = {
 		saved_log: 'Added to the archive',
 
 		// Archive UI — Phase 2
+		home_nav: 'Home',
 		archive_nav: 'Archive',
 		archive_empty_headline: 'Your archive is empty',
 		archive_empty_body: 'Stories you record will appear here. Begin by recording your first story.',
