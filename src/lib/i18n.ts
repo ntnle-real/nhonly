@@ -44,7 +44,8 @@ const strings: Record<Language, Record<string, string>> = {
 		// Landing page
 		landing_headline: 'Giữ gìn ký ức quê hương',
 		landing_sub: 'Kể câu chuyện của bạn cho thế hệ mai sau',
-		landing_cta: 'Kể chuyện của bạn'
+		landing_cta: 'Bắt đầu khi bạn sẵn sàng',
+		saved_log: 'Đã lưu vào kho lưu trữ'
 	},
 	en: {
 		// App header
@@ -83,7 +84,8 @@ const strings: Record<Language, Record<string, string>> = {
 		// Landing page
 		landing_headline: 'Preserving the memories of home',
 		landing_sub: 'Tell your story for generations to come',
-		landing_cta: 'Record Your Story'
+		landing_cta: 'Begin when you are ready',
+		saved_log: 'Added to the archive'
 	}
 };
 

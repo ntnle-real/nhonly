@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { currentLanguage, translate, setLanguage, initLanguage } from '$lib/i18n';
+	import { currentLanguage, translate, setLanguage } from '$lib/i18n';
 	import { classifyError } from '$lib/errors';
 	import { startRecording, pauseRecording, resumeRecording, stopRecording, cancelRecording } from '$lib/recording';
 	import { startWaveformAnalysis, stopWaveformAnalysis } from '$lib/waveform';
@@ -8,26 +8,30 @@
 	import { saveStory } from '$lib/archive';
 	import Waveform from '$lib/waveform.svelte';
 
-	// MARK: Scene state machine
-	// landing → recording → paused → stopped → saving → saved → landing
 	type Scene = 'landing' | 'recording' | 'paused' | 'stopped' | 'saving' | 'saved' | 'error';
 	let scene: Scene = $state('landing');
 	let errorMessage: string = $state('');
 
-	// Recording state
 	let mediaStream: MediaStream | null = $state(null);
 	let elapsedMs: number = $state(0);
+	let savedDurationMs: number = $state(0);
 	let timerInterval: ReturnType<typeof setInterval> | null = $state(null);
 	let audioBlob: Blob | null = $state(null);
 	let previewURL: string | null = $state(null);
 	let storyTitle: string = $state('');
+	let savedTitle: string = $state('');
+	let savedAt: Date | null = $state(null);
 	let formattedTime: string = $state('00:00');
 
 	function formatTime(ms: number): string {
-		const totalSeconds = Math.floor(ms / 1000);
-		const minutes = Math.floor(totalSeconds / 60);
-		const seconds = totalSeconds % 60;
-		return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+		const s = Math.floor(ms / 1000);
+		return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+	}
+
+	function formatSavedDate(date: Date, lang: string): string {
+		return new Intl.DateTimeFormat(lang === 'vi' ? 'vi-VN' : 'en-US', {
+			month: 'long', day: 'numeric', year: 'numeric'
+		}).format(date);
 	}
 
 	function startTimer(): void {
@@ -39,22 +43,18 @@
 	}
 
 	function stopTimer(): void {
-		if (timerInterval) {
-			clearInterval(timerInterval);
-			timerInterval = null;
-		}
+		if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
 	}
 
 	function toggleLanguage(): void {
 		setLanguage($currentLanguage === 'en' ? 'vi' : 'en');
 	}
 
-	// MARK: Scene transitions
-
 	async function handleBeginRecording(): Promise<void> {
 		scene = 'recording';
 		errorMessage = '';
 		elapsedMs = 0;
+		formattedTime = '00:00';
 		try {
 			mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 			startWaveformAnalysis(mediaStream);
@@ -96,6 +96,7 @@
 		try {
 			stopTimer();
 			stopWaveformAnalysis();
+			savedDurationMs = elapsedMs;
 			audioBlob = await stopRecording();
 			if (!audioBlob) throw new Error('No audio recorded');
 			previewURL = createPreviewURL(audioBlob);
@@ -122,6 +123,8 @@
 		try {
 			scene = 'saving';
 			await saveStory(storyTitle, audioBlob);
+			savedTitle = storyTitle;
+			savedAt = new Date();
 			revokePreviewURL();
 			scene = 'saved';
 			setTimeout(() => {
@@ -130,7 +133,7 @@
 				audioBlob = null;
 				previewURL = null;
 				elapsedMs = 0;
-			}, 3000);
+			}, 4000);
 		} catch (error) {
 			errorMessage = classifyError(error, { operation: 'save story', api: 'IndexedDB' }).message;
 			scene = 'error';
@@ -156,126 +159,187 @@
 		} catch (_) { /* best effort */ }
 	}
 
-	onMount(() => {
-		initLanguage();
-	});
-
-	onDestroy(async () => {
-		await cleanup();
-	});
+	onDestroy(async () => { await cleanup(); });
 </script>
 
 <svelte:head>
 	<title>Nhơn Lý</title>
 </svelte:head>
 
-<div class="app">
+<div class="relative w-full min-h-screen">
 
-	<!-- ─── SCENE: Landing ──────────────────────────────────── -->
-	<div class="scene hero-scene" class:visible={scene === 'landing'}>
-		<button class="lang-btn hero-lang" onclick={toggleLanguage}>
+	<!-- ─── SCENE: Landing ─────────────────────────────────── -->
+	<div
+		class="absolute inset-0 flex items-center justify-center min-h-screen transition-opacity duration-[450ms]"
+		class:opacity-100={scene === 'landing'}
+		class:opacity-0={scene !== 'landing'}
+		class:pointer-events-none={scene !== 'landing'}
+		style="background: linear-gradient(160deg, #0d3b3b 0%, #1b6b7b 45%, #c8974a 100%)"
+	>
+		<!-- overlay -->
+		<div class="absolute inset-0 bg-black/35"></div>
+
+		<!-- lang toggle -->
+		<button
+			onclick={toggleLanguage}
+			class="absolute top-6 right-6 z-10 px-3 py-1.5 text-xs font-semibold tracking-widest text-white border border-white/40 rounded backdrop-blur-sm bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
+		>
 			{$currentLanguage === 'en' ? 'VI' : 'EN'}
 		</button>
 
-		<div class="hero-content">
-			<p class="village-label">Nhơn Lý</p>
-			<h1 class="hero-headline">{translate($currentLanguage, 'landing_headline')}</h1>
-			<p class="hero-sub">{translate($currentLanguage, 'landing_sub')}</p>
-			<button class="cta-btn" onclick={handleBeginRecording}>
+		<!-- content -->
+		<div class="relative z-10 text-center text-white px-8 max-w-xl">
+			<p class="font-display text-xs tracking-[0.4em] uppercase text-sand/90 mb-5">Nhơn Lý</p>
+			<h1 class="font-display text-4xl md:text-5xl font-semibold leading-tight mb-4">
+				{translate($currentLanguage, 'landing_headline')}
+			</h1>
+			<p class="font-body text-base md:text-lg font-light text-white/80 leading-relaxed mb-10">
+				{translate($currentLanguage, 'landing_sub')}
+			</p>
+			<button
+				onclick={handleBeginRecording}
+				class="font-body text-base font-semibold text-white bg-rust hover:bg-[#e8642a] px-10 py-4 rounded-md min-h-[52px] transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+			>
 				{translate($currentLanguage, 'landing_cta')}
 			</button>
 		</div>
 	</div>
 
-	<!-- ─── SCENE: Recorder (all non-landing states) ─────────── -->
-	<div class="scene recorder-scene" class:visible={scene !== 'landing'}>
-
-		<header class="rec-header">
-			<span class="rec-title">Nhơn Lý</span>
-			<button class="lang-btn" onclick={toggleLanguage}>
+	<!-- ─── SCENE: Recorder ────────────────────────────────── -->
+	<div
+		class="absolute inset-0 flex flex-col min-h-screen bg-teal-deep transition-opacity duration-[450ms]"
+		class:opacity-100={scene !== 'landing'}
+		class:opacity-0={scene === 'landing'}
+		class:pointer-events-none={scene === 'landing'}
+	>
+		<!-- header -->
+		<header class="flex justify-between items-center px-6 py-4 border-b border-white/8">
+			<span class="font-display text-sm font-semibold tracking-[0.12em] text-teal-light">Nhơn Lý</span>
+			<button
+				onclick={toggleLanguage}
+				class="px-3 py-1 text-xs font-semibold tracking-widest text-white/50 border border-white/20 rounded hover:text-white/80 hover:border-white/40 transition-colors cursor-pointer"
+			>
 				{$currentLanguage === 'en' ? 'VI' : 'EN'}
 			</button>
 		</header>
 
-		<main class="rec-main">
+		<!-- main -->
+		<main class="flex-1 flex flex-col items-center justify-center px-6 py-8">
 
-			{#if scene === 'recording'}
-				<div class="card">
-					<div class="status-dot recording"></div>
-					<p class="status-label">{translate($currentLanguage, 'recording')}</p>
-					<div class="timer">{formattedTime}</div>
-					<Waveform isRecording={true} />
-					<div class="btn-row">
-						<button class="btn btn-ghost" onclick={handlePause}>
-							⏸&nbsp; {translate($currentLanguage, 'pause')}
-						</button>
-						<button class="btn btn-stop" onclick={handleStop}>
-							⏹&nbsp; {translate($currentLanguage, 'stop_recording')}
-						</button>
-					</div>
+			{#if scene === 'recording' || scene === 'paused'}
+				<!-- Status -->
+				<div class="flex items-center gap-2 mb-8">
+					{#if scene === 'recording'}
+						<span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+					{:else}
+						<span class="w-2.5 h-2.5 rounded-full bg-amber"></span>
+					{/if}
+					<span class="font-body text-xs font-semibold tracking-[0.18em] uppercase text-white/50">
+						{translate($currentLanguage, scene === 'recording' ? 'recording' : 'paused')}
+					</span>
 				</div>
 
-			{:else if scene === 'paused'}
-				<div class="card">
-					<div class="status-dot paused"></div>
-					<p class="status-label">{translate($currentLanguage, 'paused')}</p>
-					<div class="timer">{formattedTime}</div>
-					<Waveform isRecording={false} />
-					<div class="btn-row">
-						<button class="btn btn-ghost" onclick={handleResume}>
-							▶&nbsp; {translate($currentLanguage, 'resume')}
+				<!-- Waveform — centrepiece -->
+				<div class="w-full max-w-md mb-6">
+					<Waveform isRecording={scene === 'recording'} />
+				</div>
+
+				<!-- Timer — secondary -->
+				<p class="font-body text-2xl tabular-nums text-white/40 mb-10 tracking-tight">
+					{formattedTime}
+				</p>
+
+				<!-- Controls -->
+				<div class="flex gap-3 w-full max-w-xs">
+					{#if scene === 'recording'}
+						<button
+							onclick={handlePause}
+							class="flex-1 font-body font-semibold text-sm text-white/70 bg-white/8 hover:bg-white/14 py-3.5 rounded-lg min-h-[52px] transition-colors cursor-pointer"
+						>
+							⏸ &nbsp;{translate($currentLanguage, 'pause')}
 						</button>
-						<button class="btn btn-stop" onclick={handleStop}>
-							⏹&nbsp; {translate($currentLanguage, 'stop_recording')}
+					{:else}
+						<button
+							onclick={handleResume}
+							class="flex-1 font-body font-semibold text-sm text-white/70 bg-white/8 hover:bg-white/14 py-3.5 rounded-lg min-h-[52px] transition-colors cursor-pointer"
+						>
+							▶ &nbsp;{translate($currentLanguage, 'resume')}
 						</button>
-					</div>
+					{/if}
+					<button
+						onclick={handleStop}
+						class="flex-1 font-body font-semibold text-sm text-white bg-teal hover:bg-teal-light py-3.5 rounded-lg min-h-[52px] transition-colors cursor-pointer"
+					>
+						⏹ &nbsp;{translate($currentLanguage, 'stop_recording')}
+					</button>
 				</div>
 
 			{:else if scene === 'stopped'}
-				<div class="card">
-					<p class="section-label">{translate($currentLanguage, 'preview')}</p>
+				<div class="w-full max-w-sm">
+					<p class="font-display text-xs tracking-[0.2em] uppercase text-white/40 mb-4">
+						{translate($currentLanguage, 'preview')}
+					</p>
 					{#if previewURL}
-						<audio class="audio-player" controls src={previewURL}></audio>
+						<audio controls src={previewURL} class="w-full rounded-lg mb-5"></audio>
 					{/if}
 					<input
-						class="title-input"
 						type="text"
 						bind:value={storyTitle}
 						placeholder={translate($currentLanguage, 'enter_title')}
 						maxlength="100"
+						class="font-body w-full bg-white/6 border border-white/15 focus:border-teal-light text-white placeholder-white/30 rounded-lg px-4 py-3 text-base mb-4 outline-none transition-colors"
 					/>
-					<div class="btn-row">
-						<button class="btn btn-ghost" onclick={handleRecordAgain}>
-							🔄&nbsp; {translate($currentLanguage, 'record_again')}
+					<div class="flex gap-3">
+						<button
+							onclick={handleRecordAgain}
+							class="flex-1 font-body font-semibold text-sm text-white/60 bg-white/6 hover:bg-white/12 py-3.5 rounded-lg min-h-[52px] transition-colors cursor-pointer"
+						>
+							🔄 &nbsp;{translate($currentLanguage, 'record_again')}
 						</button>
 						<button
-							class="btn btn-save"
 							onclick={handleSave}
 							disabled={!storyTitle.trim()}
+							class="flex-1 font-body font-semibold text-sm text-white bg-teal hover:bg-teal-light py-3.5 rounded-lg min-h-[52px] transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
 						>
-							💾&nbsp; {translate($currentLanguage, 'archive_button')}
+							{translate($currentLanguage, 'archive_button')}
 						</button>
 					</div>
 				</div>
 
 			{:else if scene === 'saving'}
-				<div class="card center">
-					<div class="spinner"></div>
-					<p class="status-label">{translate($currentLanguage, 'saving_story')}</p>
+				<div class="flex flex-col items-center gap-4">
+					<div class="w-10 h-10 border-2 border-white/20 border-t-teal-light rounded-full animate-spin"></div>
+					<p class="font-body text-sm text-white/50 tracking-wide">
+						{translate($currentLanguage, 'saving_story')}
+					</p>
 				</div>
 
 			{:else if scene === 'saved'}
-				<div class="card center">
-					<div class="checkmark">✓</div>
-					<p class="status-label">{translate($currentLanguage, 'save_confirmation')}</p>
+				<!-- Log entry moment -->
+				<div class="text-center">
+					<div class="font-body text-5xl text-teal-light mb-6">✓</div>
+					<p class="font-body text-xs tracking-[0.2em] uppercase text-white/35 mb-3">
+						{translate($currentLanguage, 'saved_log')}
+					</p>
+					<p class="font-display text-xl font-semibold text-white mb-2">{savedTitle}</p>
+					{#if savedAt}
+						<p class="font-body text-sm text-white/40 tabular-nums">
+							{formatSavedDate(savedAt, $currentLanguage)} · {formatTime(savedDurationMs)}
+						</p>
+					{/if}
 				</div>
 
 			{:else if scene === 'error'}
-				<div class="card center">
-					<p class="error-icon">⚠</p>
-					<p class="status-label">{translate($currentLanguage, 'error_occurred')}</p>
-					<p class="error-msg">{errorMessage}</p>
-					<button class="btn btn-save" onclick={handleReturnToLanding}>
+				<div class="text-center max-w-xs">
+					<p class="text-3xl mb-4">⚠</p>
+					<p class="font-display text-lg font-semibold text-white mb-2">
+						{translate($currentLanguage, 'error_occurred')}
+					</p>
+					<p class="font-body text-sm text-white/50 mb-6 leading-relaxed">{errorMessage}</p>
+					<button
+						onclick={handleReturnToLanding}
+						class="font-body font-semibold text-sm text-white bg-teal hover:bg-teal-light px-8 py-3.5 rounded-lg min-h-[52px] transition-colors cursor-pointer"
+					>
 						{translate($currentLanguage, 'try_again')}
 					</button>
 				</div>
@@ -285,361 +349,3 @@
 	</div>
 
 </div>
-
-<style>
-	/* ─── Layout ──────────────────────────────────────────── */
-	.app {
-		position: relative;
-		width: 100%;
-		min-height: 100vh;
-		font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
-	}
-
-	.scene {
-		position: absolute;
-		inset: 0;
-		opacity: 0;
-		pointer-events: none;
-		transition: opacity 0.45s ease;
-	}
-
-	.scene.visible {
-		opacity: 1;
-		pointer-events: auto;
-	}
-
-	/* ─── Hero scene ──────────────────────────────────────── */
-	.hero-scene {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		min-height: 100vh;
-		background: linear-gradient(160deg, #0d3b3b 0%, #1b6b7b 45%, #c8974a 100%);
-	}
-
-	.hero-scene::before {
-		content: '';
-		position: absolute;
-		inset: 0;
-		background: rgba(0, 0, 0, 0.38);
-	}
-
-	.hero-lang {
-		position: absolute;
-		top: 1.5rem;
-		right: 1.5rem;
-		z-index: 2;
-		background: rgba(255, 255, 255, 0.15);
-		border-color: rgba(255, 255, 255, 0.4);
-		color: #fff;
-		backdrop-filter: blur(4px);
-	}
-
-	.hero-content {
-		position: relative;
-		z-index: 1;
-		text-align: center;
-		color: #fff;
-		padding: 2rem;
-		max-width: 600px;
-		width: 100%;
-	}
-
-	.village-label {
-		font-size: 0.8rem;
-		font-weight: 600;
-		letter-spacing: 0.35em;
-		text-transform: uppercase;
-		color: #e2d7b0;
-		margin: 0 0 1.25rem;
-		opacity: 0.9;
-	}
-
-	.hero-headline {
-		font-size: clamp(1.9rem, 5vw, 3.1rem);
-		font-weight: 700;
-		line-height: 1.2;
-		margin: 0 0 0.9rem;
-	}
-
-	.hero-sub {
-		font-size: clamp(0.95rem, 2.5vw, 1.15rem);
-		font-weight: 300;
-		line-height: 1.65;
-		color: rgba(255, 255, 255, 0.82);
-		margin: 0 0 2.5rem;
-	}
-
-	.cta-btn {
-		display: inline-block;
-		background: #FF773E;
-		color: #fff;
-		border: none;
-		font-family: inherit;
-		font-size: 1.1rem;
-		font-weight: 600;
-		padding: 1rem 2.5rem;
-		border-radius: 6px;
-		min-height: 52px;
-		cursor: pointer;
-		transition: background 0.2s, transform 0.15s;
-	}
-
-	.cta-btn:hover {
-		background: #e8642a;
-		transform: translateY(-2px);
-	}
-
-	/* ─── Recorder scene ──────────────────────────────────── */
-	.recorder-scene {
-		display: flex;
-		flex-direction: column;
-		min-height: 100vh;
-		background: #f8f7f4;
-	}
-
-	.rec-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 1.25rem 1.5rem;
-		background: #fff;
-		border-bottom: 1px solid #e8e4de;
-	}
-
-	.rec-title {
-		font-size: 1rem;
-		font-weight: 700;
-		letter-spacing: 0.05em;
-		color: #1b6b7b;
-	}
-
-	.rec-main {
-		flex: 1;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 2rem 1rem;
-	}
-
-	/* ─── Shared UI ───────────────────────────────────────── */
-	.lang-btn {
-		padding: 0.4rem 0.85rem;
-		background: transparent;
-		border: 1px solid currentColor;
-		border-radius: 4px;
-		font-family: inherit;
-		font-weight: 600;
-		font-size: 0.8rem;
-		letter-spacing: 0.05em;
-		cursor: pointer;
-		color: #555;
-		transition: background 0.2s;
-	}
-
-	.lang-btn:hover {
-		background: rgba(0, 0, 0, 0.06);
-	}
-
-	.card {
-		background: #fff;
-		border-radius: 16px;
-		padding: 2.5rem 2rem;
-		max-width: 420px;
-		width: 100%;
-		box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-	}
-
-	.card.center {
-		text-align: center;
-	}
-
-	/* Status dot */
-	.status-dot {
-		width: 12px;
-		height: 12px;
-		border-radius: 50%;
-		margin: 0 auto 0.75rem;
-	}
-
-	.status-dot.recording {
-		background: #e03e3e;
-		animation: pulse 1.2s ease-in-out infinite;
-	}
-
-	.status-dot.paused {
-		background: #c49a00;
-	}
-
-	@keyframes pulse {
-		0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(224, 62, 62, 0.4); }
-		50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(224, 62, 62, 0); }
-	}
-
-	.status-label {
-		font-size: 0.9rem;
-		font-weight: 600;
-		text-align: center;
-		color: #555;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-		margin: 0 0 0.5rem;
-	}
-
-	.timer {
-		font-size: 3.5rem;
-		font-weight: 700;
-		text-align: center;
-		color: #1b1b1b;
-		letter-spacing: 0.04em;
-		font-variant-numeric: tabular-nums;
-		margin: 0.25rem 0 1.25rem;
-		font-family: 'Be Vietnam Pro', monospace;
-	}
-
-	.section-label {
-		font-size: 0.85rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		color: #888;
-		margin: 0 0 1rem;
-	}
-
-	/* Audio player */
-	.audio-player {
-		width: 100%;
-		margin-bottom: 1.25rem;
-		border-radius: 8px;
-	}
-
-	/* Title input */
-	.title-input {
-		width: 100%;
-		padding: 0.8rem 1rem;
-		margin-bottom: 1.5rem;
-		border: 2px solid #e0ddd8;
-		border-radius: 8px;
-		font-family: inherit;
-		font-size: 1rem;
-		color: #1b1b1b;
-		background: #fafaf8;
-		box-sizing: border-box;
-		transition: border-color 0.2s;
-	}
-
-	.title-input:focus {
-		outline: none;
-		border-color: #1b6b7b;
-	}
-
-	/* Buttons */
-	.btn-row {
-		display: flex;
-		gap: 0.75rem;
-	}
-
-	.btn {
-		flex: 1;
-		padding: 0.85rem 1rem;
-		min-height: 52px;
-		border: none;
-		border-radius: 8px;
-		font-family: inherit;
-		font-size: 0.95rem;
-		font-weight: 600;
-		cursor: pointer;
-		transition: background 0.15s, transform 0.1s;
-	}
-
-	.btn:active {
-		transform: scale(0.98);
-	}
-
-	.btn-ghost {
-		background: #f0ece6;
-		color: #444;
-	}
-
-	.btn-ghost:hover {
-		background: #e4dfd8;
-	}
-
-	.btn-stop {
-		background: #e03e3e;
-		color: #fff;
-	}
-
-	.btn-stop:hover {
-		background: #c43333;
-	}
-
-	.btn-save {
-		background: #1b6b7b;
-		color: #fff;
-	}
-
-	.btn-save:hover:not(:disabled) {
-		background: #155a68;
-	}
-
-	.btn-save:disabled {
-		opacity: 0.4;
-		cursor: not-allowed;
-	}
-
-	/* Saving / saved states */
-	.spinner {
-		width: 44px;
-		height: 44px;
-		border: 4px solid #e8e4de;
-		border-top-color: #1b6b7b;
-		border-radius: 50%;
-		animation: spin 0.9s linear infinite;
-		margin: 0 auto 1.25rem;
-	}
-
-	@keyframes spin {
-		to { transform: rotate(360deg); }
-	}
-
-	.checkmark {
-		font-size: 4rem;
-		color: #1b6b7b;
-		margin-bottom: 0.75rem;
-		line-height: 1;
-	}
-
-	/* Error */
-	.error-icon {
-		font-size: 3rem;
-		margin-bottom: 0.5rem;
-	}
-
-	.error-msg {
-		font-size: 0.9rem;
-		color: #888;
-		margin: 0.5rem 0 1.5rem;
-		line-height: 1.5;
-	}
-
-	/* Mobile */
-	@media (max-width: 480px) {
-		.card {
-			padding: 2rem 1.25rem;
-			border-radius: 12px;
-		}
-
-		.timer {
-			font-size: 3rem;
-		}
-
-		.btn-row {
-			flex-direction: column;
-		}
-
-		.cta-btn {
-			width: 100%;
-		}
-	}
-</style>

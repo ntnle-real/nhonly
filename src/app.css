@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@theme {
+	--font-display: 'Lora', Georgia, serif;
+	--font-body: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+
+	--color-teal-deep: #0a1f1f;
+	--color-teal: #1b6b7b;
+	--color-teal-light: #2a8fa3;
+	--color-sand: #e2d7b0;
+	--color-amber: #c8974a;
+	--color-rust: #FF773E;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+	font-family: var(--font-body);
+	background: #fafaf8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	* {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
+	}
+}
