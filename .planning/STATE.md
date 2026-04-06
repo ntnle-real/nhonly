@@ -158,10 +158,15 @@ progress:
 
 **Live Site:**
 - **URL:** https://nhon-ly.org
-- **Status:** Public, accessible worldwide
+- **Status:** ✅ Public, accessible worldwide
 - **SSL/TLS:** Cloudflare managed (automatic renewal)
 - **Backend:** Node.js server on localhost:3000 via Cloudflare Tunnel
 - **Uptime:** Auto-restart on crash, survives reboots
+- **Language Support:** ✅ Vietnamese/English bilingual working
+  - English text displays by default
+  - VI button toggles to Vietnamese text
+  - Language preference persisted to localStorage
+  - i18n fix: converted t() to synchronous function with store-based tracking
 
 **Previous Security Hardening Plans:**
 - `/planning/DEPLOYMENT_PHASE_2.md` — Available for future implementation
