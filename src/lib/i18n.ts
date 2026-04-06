@@ -39,7 +39,12 @@ const strings: Record<Language, Record<string, string>> = {
 		microphone_required: 'Cần quyền truy cập microphone',
 		browser_old: 'Trình duyệt không hỗ trợ ghi âm',
 		storage_full: 'Bộ nhớ đầy',
-		cancel: 'Hủy'
+		cancel: 'Hủy',
+
+		// Landing page
+		landing_headline: 'Giữ gìn ký ức quê hương',
+		landing_sub: 'Kể câu chuyện của bạn cho thế hệ mai sau',
+		landing_cta: 'Kể chuyện của bạn'
 	},
 	en: {
 		// App header
@@ -73,7 +78,12 @@ const strings: Record<Language, Record<string, string>> = {
 		microphone_required: 'Microphone access is required',
 		browser_old: 'Your browser does not support recording',
 		storage_full: 'Storage is full',
-		cancel: 'Cancel'
+		cancel: 'Cancel',
+
+		// Landing page
+		landing_headline: 'Preserving the memories of home',
+		landing_sub: 'Tell your story for generations to come',
+		landing_cta: 'Record Your Story'
 	}
 };
 
