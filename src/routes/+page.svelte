@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { currentLanguage, translate, setLanguage } from '$lib/i18n';
+	import { currentLanguage, translate } from '$lib/i18n';
 	import { classifyError } from '$lib/errors';
 	import { startRecording, pauseRecording, resumeRecording, stopRecording, cancelRecording } from '$lib/recording';
 	import { startWaveformAnalysis, stopWaveformAnalysis } from '$lib/waveform';
@@ -44,10 +44,6 @@
 
 	function stopTimer(): void {
 		if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-	}
-
-	function toggleLanguage(): void {
-		setLanguage($currentLanguage === 'en' ? 'vi' : 'en');
 	}
 
 	async function handleBeginRecording(): Promise<void> {
@@ -180,14 +176,6 @@
 		<!-- overlay -->
 		<div class="absolute inset-0 bg-black/35"></div>
 
-		<!-- lang toggle -->
-		<button
-			onclick={toggleLanguage}
-			class="absolute top-6 right-6 z-10 px-3 py-1.5 text-xs font-semibold tracking-widest text-white border border-white/40 rounded backdrop-blur-sm bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
-		>
-			{$currentLanguage === 'en' ? 'VI' : 'EN'}
-		</button>
-
 		<!-- content -->
 		<div class="relative z-10 text-center text-white px-8 max-w-xl">
 			<p class="font-display text-xs tracking-[0.4em] uppercase text-sand/90 mb-5">Nhơn Lý</p>
@@ -221,17 +209,6 @@
 		class:opacity-0={scene === 'landing'}
 		class:pointer-events-none={scene === 'landing'}
 	>
-		<!-- header -->
-		<header class="flex justify-between items-center px-6 py-4 border-b border-white/8">
-			<span class="font-display text-sm font-semibold tracking-[0.12em] text-teal-light">Nhơn Lý</span>
-			<button
-				onclick={toggleLanguage}
-				class="px-3 py-1 text-xs font-semibold tracking-widest text-white/50 border border-white/20 rounded hover:text-white/80 hover:border-white/40 transition-colors cursor-pointer"
-			>
-				{$currentLanguage === 'en' ? 'VI' : 'EN'}
-			</button>
-		</header>
-
 		<!-- main -->
 		<main class="flex-1 flex flex-col items-center justify-center px-6 py-8">
 

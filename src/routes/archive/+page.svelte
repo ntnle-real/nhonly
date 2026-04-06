@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { currentLanguage, translate, setLanguage } from '$lib/i18n';
+	import { currentLanguage, translate } from '$lib/i18n';
 	import { readAndSortStories, deleteStory } from '$lib/archive.service';
 	import { initDatabase } from '$lib/archive';
 	import StoryList from './StoryList.svelte';
@@ -24,11 +24,6 @@
 	let isLoading: boolean = $state(true);
 	let error: string | null = $state(null);
 	let deleteToastVisible: boolean = $state(false);
-
-	function toggleLanguage(): void {
-		setLanguage($currentLanguage === 'en' ? 'vi' : 'en');
-		loadStories();
-	}
 
 	async function loadStories(): Promise<void> {
 		isLoading = true;
@@ -100,10 +95,17 @@
 		loadStories();
 	}
 
-	// Load stories on mount
+	// Load stories on mount; re-load when language changes to refresh formatted strings
 	onMount(async () => {
 		await initDatabase();
 		loadStories();
+
+		let first = true;
+		const unsubscribe = currentLanguage.subscribe(() => {
+			if (!first) loadStories();
+			first = false;
+		});
+		return unsubscribe;
 	});
 
 	let selectedStory: Story | null = $state(null);
@@ -118,20 +120,6 @@
 </svelte:head>
 
 <div class="relative w-full min-h-screen bg-teal-deep flex flex-col">
-	<!-- Header -->
-	<header class="flex justify-between items-center px-6 py-4 border-b border-white/8">
-		<div class="flex items-center gap-4">
-			<a href="/" class="font-body text-sm text-white/50 hover:text-white/80 transition-colors">← {$currentLanguage === 'en' ? 'Home' : 'Trang chủ'}</a>
-			<span class="font-display text-sm font-semibold tracking-[0.12em] text-teal-light">Nhơn Lý</span>
-		</div>
-		<button
-			onclick={toggleLanguage}
-			class="px-3 py-1 text-xs font-semibold tracking-widest text-white/50 border border-white/20 rounded hover:text-white/80 hover:border-white/40 transition-colors cursor-pointer"
-		>
-			{$currentLanguage === 'en' ? 'VI' : 'EN'}
-		</button>
-	</header>
-
 	<!-- Main content area -->
 	<main class="flex-1 px-6 py-8">
 		<!-- Scene: List -->
