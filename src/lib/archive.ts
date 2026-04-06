@@ -29,13 +29,13 @@ interface InitDatabaseContract {
 interface SaveStoryContract {
 	serves: string;
 	declares: {
-		input: 'story_blob_title';
+		input: 'story_blob_title_duration';
 		output: 'story_archived';
 	};
 	succeeds_if: {
-		reads: ['story_blob_title'];
+		reads: ['story_blob_title_duration'];
 		steps: ['start_transaction', 'add_story', 'commit'];
-		observes: ['story_stored', 'timestamp_recorded'];
+		observes: ['story_stored', 'timestamp_recorded', 'duration_recorded'];
 		returns: ['story_archived'];
 	};
 	fails_if: {
@@ -48,6 +48,7 @@ export interface ArchivedStory {
 	title: string;
 	audioBlob: Blob;
 	timestamp: number; // milliseconds since epoch
+	durationMs: number; // audio duration in milliseconds
 }
 
 const DB_NAME = 'nhonly_archive';
@@ -127,15 +128,15 @@ export async function initDatabase(
 }
 
 const saveStoryContract: SaveStoryContract = {
-	serves: 'write audio blob and title to indexed archive with timestamp',
+	serves: 'write audio blob, title, duration, and timestamp to indexed archive',
 	declares: {
-		input: 'story_blob_title',
+		input: 'story_blob_title_duration',
 		output: 'story_archived'
 	},
 	succeeds_if: {
-		reads: ['story_blob_title'],
+		reads: ['story_blob_title_duration'],
 		steps: ['start_transaction', 'add_story', 'commit'],
-		observes: ['story_stored', 'timestamp_recorded'],
+		observes: ['story_stored', 'timestamp_recorded', 'duration_recorded'],
 		returns: ['story_archived']
 	},
 	fails_if: {
@@ -145,19 +146,21 @@ const saveStoryContract: SaveStoryContract = {
 
 /**
  * Save story to archive.
- * Writes story (blob + title + timestamp) to IndexedDB, returns ID
+ * Writes story (blob + title + duration + timestamp) to IndexedDB, returns ID
  * Failure: database not initialized or write transaction fails
  * @param title - Story title (validated for non-empty)
  * @param audioBlob - Audio Blob from recording
+ * @param durationMs - Duration of audio in milliseconds
  * @returns Promise resolving to auto-generated story ID
  * @throws StorageError if save fails
  */
 export async function saveStory(
 	title: string,
 	audioBlob: Blob,
+	durationMs: number,
 	obs: ObservationSession = createObservationSession()
 ): Promise<number> {
-	obs.read('story_blob_title', { title, audioBlob: { size: audioBlob.size, type: audioBlob.type } });
+	obs.read('story_blob_title_duration', { title, durationMs, audioBlob: { size: audioBlob.size, type: audioBlob.type } });
 
 	if (!db) {
 		obs.observe('database_not_ready', 'db is null');
@@ -176,11 +179,13 @@ export async function saveStory(
 		const story = {
 			title: title.trim(),
 			audioBlob,
+			durationMs,
 			timestamp: Date.now()
 		};
 
 		obs.observe('story_stored', `story title="${story.title}", size=${audioBlob.size}`);
 		obs.observe('timestamp_recorded', `timestamp=${story.timestamp}`);
+		obs.observe('duration_recorded', `durationMs=${durationMs}`);
 
 		const request = store.add(story);
 
