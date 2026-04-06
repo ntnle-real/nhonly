@@ -196,12 +196,20 @@
 			<p class="font-body text-base md:text-lg font-light text-white/80 leading-relaxed mb-10">
 				{translate($currentLanguage, 'landing_sub')}
 			</p>
-			<button
-				onclick={handleBeginRecording}
-				class="font-body text-base font-semibold text-white bg-rust hover:bg-[#e8642a] px-10 py-4 rounded-md min-h-[52px] transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
-			>
-				{translate($currentLanguage, 'landing_cta')}
-			</button>
+			<div class="flex flex-col gap-4 w-full max-w-xs mx-auto">
+				<button
+					onclick={handleBeginRecording}
+					class="font-body text-base font-semibold text-white bg-rust hover:bg-[#e8642a] px-10 py-4 rounded-md min-h-[52px] transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+				>
+					{translate($currentLanguage, 'landing_cta')}
+				</button>
+				<a
+					href="/archive"
+					class="font-body text-base font-semibold text-white bg-white/10 hover:bg-white/15 px-6 py-4 rounded-md min-h-[52px] transition-all duration-200 hover:-translate-y-0.5 cursor-pointer inline-block text-center"
+				>
+					{translate($currentLanguage, 'archive_nav')}
+				</a>
+			</div>
 		</div>
 	</div>
 
