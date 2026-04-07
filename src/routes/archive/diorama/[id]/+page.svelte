@@ -1,6 +1,6 @@
 <!-- MARK: SCENE(Diorama) -> Living Memory Render -->
 <!-- Purpose: Render the boy-on-beach memory as a vertical scroll sequence of witnessed fragments. -->
-<!-- Success: 8 fragments surface one at a time through scroll; background warms toward golden hour; silence state leaves only ocean. -->
+<!-- Success: 8 fragments surface through scroll; GSAP scrub provides weighted progression; Three.js renders abstract environment. -->
 <!-- Failure: Invalid diorama id redirects to /archive. -->
 
 <script lang="ts">
@@ -8,17 +8,21 @@
 	 * @component DioramaScene
 	 * @serves "witnessed memory sequence — The Boy on the Beach, Nhơn Lý, 1976"
 	 * @declares "diorama_id" "memory_scene"
-	 * @succeeds_if "fragments surface through vertical scroll" "silence state is scroll-earned"
 	 */
 
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { currentLanguage } from '$lib/i18n';
+	import { currentLanguage, translate } from '$lib/i18n';
 	import { getDioramaById } from '$lib/diorama.catalog';
+	import DioramaCanvas from './DioramaCanvas.svelte';
+	import PixiBoatStudy from './PixiBoatStudy.svelte';
+	import { gsap } from 'gsap';
+	import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
+	import { createObservationSession } from '$lib/obs';
 
-	// MARK: DATA — Locked fragment sequence
-	const FRAGMENTS = [
+	// MARK: DATA — Locked fragment sequence (Bilingual)
+	const FRAGMENTS_EN = [
 		'Nhơn Lý, 1976...',
 		'The water holds the golden light...',
 		'Fish smell comes up from the sand...',
@@ -29,74 +33,103 @@
 		'He jumps...',
 	] as const;
 
-	// ZONE_COUNT: 8 fragment zones + 1 text-fade zone + 1 silence zone
-	const ZONE_COUNT = FRAGMENTS.length + 2;
+	const FRAGMENTS_VI = [
+		'Nhơn Lý, 1976...',
+		'Nước ôm lấy ánh sáng vàng...',
+		'Mùi cá bốc lên từ cát...',
+		'Thúng chai tre dập dềnh trên sóng...',
+		'Những ngôi nhà nằm sát mép nước...',
+		'Những người phụ nữ ngồi xổm bên rổ cá...',
+		'Một cậu bé trần truồng chạy về phía đại dương...',
+		'Cậu nhảy xuống...',
+	] as const;
+
+	const ZONE_COUNT = FRAGMENTS_EN.length + 2;
 
 	// MARK: STATE
 	let outerEl: HTMLDivElement;
-	let scrollTop = $state(0);
-	let zoneHeight = $state(500); // px per zone; calibrated on mount from element height
+	let scrollContent: HTMLDivElement;
+	const obs = createObservationSession();
+
+	// Proxy object for GSAP to animate
+	let sceneState = $state({
+		progress: 0,
+		warmth: 0
+	});
 
 	const dioramaId = $derived($page.params.id ?? '');
 	const diorama = $derived(getDioramaById(dioramaId));
+	const fragments = $derived($currentLanguage === 'vi' ? FRAGMENTS_VI : FRAGMENTS_EN);
 
-	// Scroll progress in zone units (0 = start, ZONE_COUNT = complete)
-	const progress = $derived(scrollTop / zoneHeight);
-
-	// Warmth 0→1: background warms as memory progresses through the 8 fragment zones
-	const warmth = $derived(Math.min(Math.max(progress / FRAGMENTS.length, 0), 1));
-
-	// Active fragment: current zone text, last fragment held through fade zone, null in silence
 	const activeFragment = $derived(
-		progress < FRAGMENTS.length
-			? FRAGMENTS[Math.min(Math.floor(progress), FRAGMENTS.length - 1)]
-			: progress < FRAGMENTS.length + 1
-				? FRAGMENTS[FRAGMENTS.length - 1] // "He jumps..." persists while fading out
+		sceneState.progress < fragments.length
+			? fragments[Math.min(Math.floor(sceneState.progress), fragments.length - 1)]
+			: sceneState.progress < fragments.length + 1
+				? fragments[fragments.length - 1]
 				: null
 	);
 
 	// MARK: FUNCTION(calcTextOpacity) -> Per-zone text opacity
-	// Fades in over first 13% of zone, holds, fades out over last 13%.
-	// In the fade zone after the last fragment, fades from 1→0 continuously.
 	function calcTextOpacity(p: number): number {
 		const i = Math.floor(p);
 		const t = p - i;
 		if (p < 0) return 0;
-		if (i < FRAGMENTS.length) {
+		if (i < fragments.length) {
 			if (t < 0.13) return t / 0.13;
 			if (t > 0.87) return (1 - t) / 0.13;
 			return 1;
 		}
-		if (i === FRAGMENTS.length) return Math.max(0, 1 - t);
+		if (i === fragments.length) return Math.max(0, 1 - t);
 		return 0;
 	}
 
-	// MARK: FUNCTION(calcTextY) -> Entrance gravity: each fragment arrives gently from below
-	function calcTextY(p: number): number {
-		const i = Math.floor(p);
-		const t = p - i;
-		if (i >= FRAGMENTS.length || t >= 0.13) return 0;
-		return (1 - t / 0.13) * 14;
+	const textOpacity = $derived(calcTextOpacity(sceneState.progress));
+
+	// MARK: FUNCTION(calcBoatOpacity) -> Thúng chai presence window
+	// Purpose: Surface the thúng chai Pixi study during the waterline fragment only.
+	// Success: Opacity peaks at fragment 3 (progress 3–4.5), zero elsewhere.
+	// Failure: Returns 0 (safe default — study stays hidden).
+	function calcBoatOpacity(p: number): number {
+		if (p < 2.5) return 0;
+		if (p < 3.2) return (p - 2.5) / 0.7;
+		if (p < 4.5) return 1;
+		if (p < 5.2) return 1 - (p - 4.5) / 0.7;
+		return 0;
 	}
 
-	const textOpacity = $derived(calcTextOpacity(progress));
-	const textY = $derived(calcTextY(progress));
+	const boatOpacity = $derived(calcBoatOpacity(sceneState.progress));
 
 	onMount(() => {
-		if (!diorama) { goto('/archive'); return; }
+		obs.read("diorama_id", dioramaId);
+		if (!diorama) { 
+			obs.observe("invalid_diorama_redirect", dioramaId);
+			goto('/archive'); 
+			return; 
+		}
 
-		// Zone height = 75% of the scroller's visible height; responsive to resize
-		zoneHeight = outerEl.clientHeight * 0.75;
+		obs.step("init_gsap_scrolltrigger");
+		gsap.registerPlugin(ScrollTrigger);
 
-		const onScroll = () => { scrollTop = outerEl.scrollTop; };
-		const onResize = () => { zoneHeight = outerEl.clientHeight * 0.75; };
+		const tl = gsap.timeline({
+			scrollTrigger: {
+				trigger: scrollContent,
+				start: "top top",
+				end: "bottom bottom",
+				scrub: 1.5, // High viscosity for "effort of remembering"
+				scroller: outerEl
+			}
+		});
 
-		outerEl.addEventListener('scroll', onScroll, { passive: true });
-		window.addEventListener('resize', onResize, { passive: true });
+		tl.to(sceneState, {
+			progress: ZONE_COUNT,
+			warmth: 1,
+			ease: "none"
+		});
+
+		obs.observe("diorama_mounted", dioramaId);
 
 		return () => {
-			outerEl.removeEventListener('scroll', onScroll);
-			window.removeEventListener('resize', onResize);
+			ScrollTrigger.getAll().forEach(t => t.kill());
 		};
 	});
 </script>
@@ -106,37 +139,38 @@
 </svelte:head>
 
 {#if diorama}
-	<!--
-		Self-contained scroll viewport — fixed below nav, scrolls internally.
-		scene-sticky and text-sticky both pin to top via position: sticky.
-		scroll-space creates the scrollable height that drives fragment progression.
-	-->
 	<div
 		class="diorama-outer"
 		bind:this={outerEl}
 		role="main"
 		aria-label="Living memory: {diorama.title}"
 	>
-		<!-- Atmospheric background — sticky, covers the full content area -->
+		<!-- Atmospheric background — Three.js Scene -->
 		<div class="scene-sticky" aria-hidden="true">
-			<div class="layer-base"></div>
-			<div class="layer-warm" style="opacity: {warmth * 0.85}"></div>
-			<div class="layer-haze" style="opacity: {0.25 + warmth * 0.45}"></div>
+			<DioramaCanvas 
+				progress={sceneState.progress} 
+				warmth={sceneState.warmth} 
+			/>
 		</div>
 
-		<!-- Text overlay — sticky, pulled up to overlap scene via negative margin -->
+		<!-- Pixi boat study — thúng chai experimental layer (fragment 3 window) -->
+		<div class="boat-study-sticky" aria-hidden="true" style="opacity: {boatOpacity};">
+			<div class="boat-study-panel">
+				<PixiBoatStudy />
+			</div>
+		</div>
+
+		<!-- Text overlay — pinned to top -->
 		<div class="text-sticky" aria-live="polite" aria-atomic="true">
-			<!-- Exit link — always reachable -->
 			<div class="diorama-exit">
-				<a href="/archive" class="exit-link">← Archive</a>
+				<a href="/archive" class="exit-link">← {translate($currentLanguage, 'archive_nav')}</a>
 			</div>
 
-			<!-- Fragment text — opacity and y-offset driven directly by scroll -->
 			<div class="content-stage">
 				{#if activeFragment !== null}
 					<p
 						class="fragment-text"
-						style="opacity: {textOpacity}; transform: translateY({textY}px);"
+						style="opacity: {textOpacity};"
 					>
 						{activeFragment}
 					</p>
@@ -144,120 +178,71 @@
 			</div>
 		</div>
 
-		<!-- Scroll spacer — creates scrollable height; no visual content -->
+		<!-- Scroll spacer — drives the ScrollTrigger -->
 		<div
 			class="scroll-space"
-			style="height: {ZONE_COUNT * 75}vh;"
+			bind:this={scrollContent}
+			style="height: {ZONE_COUNT * 100}vh;"
 			aria-hidden="true"
 		></div>
 	</div>
 {/if}
 
 <style>
-	/* MARK: STYLE — Self-contained scroll viewport */
-
-	/* Fixed below nav, internal scroll, scrollbar hidden */
 	.diorama-outer {
 		position: fixed;
-		top: 65px;
-		left: 0;
-		right: 0;
-		bottom: 0;
+		inset: 0;
 		overflow-y: scroll;
-		-webkit-overflow-scrolling: touch;
 		scrollbar-width: none;
+		background: #071818;
 	}
 
 	.diorama-outer::-webkit-scrollbar {
 		display: none;
 	}
 
-	/* Atmospheric stage — sticks to top of scroll container for the full scroll duration */
 	.scene-sticky {
 		position: sticky;
 		top: 0;
-		height: calc(100vh - 65px);
+		height: 100vh;
 		overflow: hidden;
 		z-index: 1;
 	}
 
-	/* Text overlay — same sticky behavior; negative margin pulls it up to overlap the scene */
+	.boat-study-sticky {
+		position: sticky;
+		top: 0;
+		height: 100vh;
+		margin-top: -100vh;
+		z-index: 2;
+		pointer-events: none;
+		transition: opacity 0.9s ease;
+	}
+
+	.boat-study-panel {
+		position: absolute;
+		bottom: 2.5rem;
+		left: 2.5rem;
+		width: min(420px, 90vw);
+	}
+
 	.text-sticky {
 		position: sticky;
 		top: 0;
-		height: calc(100vh - 65px);
-		margin-top: calc(-1 * (100vh - 65px));
-		z-index: 2;
+		height: 100vh;
+		margin-top: -100vh;
+		z-index: 3;
 		pointer-events: none;
 	}
 
-	/* Scroll spacer — behind sticky layers, provides scrollable height */
 	.scroll-space {
 		position: relative;
 		z-index: 0;
 	}
 
-	/* Stable deep ocean base */
-	.layer-base {
-		position: absolute;
-		inset: 0;
-		background:
-			radial-gradient(
-				ellipse 160% 90% at 50% 115%,
-				#163a32 0%,
-				#0d2828 30%,
-				#0a1f1f 65%,
-				#071818 100%
-			);
-	}
-
-	/* Golden-hour warmth — opacity driven by scene progress */
-	.layer-warm {
-		position: absolute;
-		inset: 0;
-		background:
-			radial-gradient(
-				ellipse 95% 60% at 48% 105%,
-				rgba(200, 151, 74, 0.55) 0%,
-				rgba(212, 164, 58, 0.3) 22%,
-				rgba(180, 95, 35, 0.14) 48%,
-				transparent 75%
-			),
-			radial-gradient(
-				ellipse 55% 28% at 78% 98%,
-				rgba(196, 115, 44, 0.22) 0%,
-				transparent 65%
-			);
-		transition: opacity 4s ease;
-	}
-
-	/* Atmospheric haze — slow drift, deepens toward golden hour */
-	.layer-haze {
-		position: absolute;
-		inset: 0;
-		background:
-			linear-gradient(
-				to bottom,
-				transparent 0%,
-				rgba(38, 85, 72, 0.05) 35%,
-				rgba(38, 85, 72, 0.12) 58%,
-				rgba(24, 56, 46, 0.22) 80%,
-				rgba(18, 44, 36, 0.32) 100%
-			);
-		animation: hazeDrift 10s ease-in-out infinite;
-		transition: opacity 4s ease;
-	}
-
-	@keyframes hazeDrift {
-		0%, 100% { transform: translateY(0) scaleX(1); }
-		38% { transform: translateY(-5px) scaleX(1.004); }
-		70% { transform: translateY(4px) scaleX(0.997); }
-	}
-
-	/* Exit link — restore pointer events (parent has pointer-events: none) */
 	.diorama-exit {
 		position: absolute;
-		top: 1.5rem;
+		top: 2rem;
 		left: 2rem;
 		pointer-events: all;
 		z-index: 10;
@@ -265,38 +250,38 @@
 
 	.exit-link {
 		font-family: var(--font-body);
-		font-size: 0.8125rem;
-		letter-spacing: 0.07em;
-		color: rgba(255, 255, 255, 0.28);
+		font-size: 0.875rem;
+		letter-spacing: 0.05em;
+		color: rgba(255, 255, 255, 0.4);
 		text-decoration: none;
 		transition: color 0.4s ease;
 	}
 
 	.exit-link:hover {
-		color: rgba(255, 255, 255, 0.58);
+		color: rgba(255, 255, 255, 0.8);
 	}
 
-	/* Fragment stage — centered in the pinned viewport area */
 	.content-stage {
 		position: absolute;
 		inset: 0;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: 5rem 2.5rem 4rem;
+		padding: 2rem;
 	}
 
-	/* Fragment text — scroll drives opacity and y-offset directly via inline style */
 	.fragment-text {
 		font-family: var(--font-display);
-		font-size: clamp(1.375rem, 3.8vw, 2.625rem);
-		font-weight: 400;
-		color: rgba(255, 255, 255, 0.88);
+		font-size: clamp(1.5rem, 4vw, 2.5rem);
+		font-weight: 300;
+		color: rgba(255, 255, 255, 0.9);
 		text-align: center;
-		max-width: 32rem;
-		line-height: 1.5;
+		max-width: 40rem;
+		line-height: 1.4;
 		margin: 0;
-		padding: 0;
-		will-change: opacity, transform;
+		text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+		will-change: opacity;
 	}
 </style>
+
+
