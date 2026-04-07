@@ -5,9 +5,12 @@
 	import { currentLanguage, translate } from '$lib/i18n';
 	import { getDioramaById } from '$lib/diorama.catalog';
 	import DioramaCanvas from './DioramaCanvas.svelte';
+	import DioramaFragments from './DioramaFragments.svelte';
 
 	const dioramaId = $derived($page.params.id);
 	const diorama = $derived(getDioramaById(dioramaId));
+
+	let scrollContainerEl: HTMLElement | null = $state(null);
 
 	function handleExit(): void {
 		goto('/archive');
@@ -39,11 +42,16 @@
 <DioramaCanvas />
 
 <!-- Scroll container (GSAP fragments added in Plan 03) -->
-<div class="scroll-container" style="
+<div
+	bind:this={scrollContainerEl}
+	class="scroll-container"
+	style="
 	position: relative; width: 100%; height: 5000px; overflow-y: scroll; overflow-x: hidden;
 	z-index: 1;
-">
-	<!-- Text fragments injected here in Plan 03 -->
+"
+>
+	<!-- Fragment layer with GSAP ScrollTrigger animation -->
+	<DioramaFragments scrollContainer={scrollContainerEl} />
 </div>
 
 <!-- Exit button (">>" top-left) — always on top -->
