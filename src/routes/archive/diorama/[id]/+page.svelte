@@ -48,8 +48,8 @@
 	const ZONE_COUNT = FRAGMENTS_EN.length + 2;
 
 	// MARK: STATE
-	let outerEl: HTMLDivElement;
-	let scrollContent: HTMLDivElement;
+	let outerEl = $state<HTMLDivElement | undefined>();
+	let scrollContent = $state<HTMLDivElement | undefined>();
 	const obs = createObservationSession();
 
 	// Proxy object for GSAP to animate

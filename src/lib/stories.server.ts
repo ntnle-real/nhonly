@@ -3,7 +3,7 @@
 // Success: Audio files stored, metadata recorded, queries return correct data
 // Failure: Upload fails, database error, or invalid input
 
-import { supabaseAdmin } from './supabase.server';
+import { getSupabaseAdminClient } from './supabase.server';
 import { createObservationSession } from './obs';
 import type { ObservationSession } from './obs';
 
@@ -27,7 +27,7 @@ export async function saveStory(
 
 		const fileName = `${Date.now()}_${title.replace(/\s+/g, '_').substring(0, 50)}.webm`;
 
-		const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+		const { data: uploadData, error: uploadError } = await getSupabaseAdminClient().storage
 			.from('recordings')
 			.upload(fileName, audioBlob, { cacheControl: '3600', upsert: false });
 
@@ -47,7 +47,7 @@ export async function saveStory(
 		// Step 2: Get public URL for audio
 		obs.step('get_audio_url');
 
-		const { data } = supabaseAdmin.storage.from('recordings').getPublicUrl(fileName);
+		const { data } = getSupabaseAdminClient().storage.from('recordings').getPublicUrl(fileName);
 		const audioUrl = data.publicUrl;
 
 		obs.observe('audio_url_generated', audioUrl);
@@ -55,7 +55,7 @@ export async function saveStory(
 		// Step 3: Save metadata to database
 		obs.step('save_story_metadata');
 
-		const { data: storyData, error: dbError } = await supabaseAdmin
+		const { data: storyData, error: dbError } = await getSupabaseAdminClient()
 			.from('stories')
 			.insert([
 				{
@@ -109,7 +109,7 @@ export async function getAllStories(obs: ObservationSession = createObservationS
 	obs.step('fetch_all_stories');
 
 	try {
-		const { data, error } = await supabaseAdmin
+		const { data, error } = await getSupabaseAdminClient()
 			.from('stories')
 			.select('*')
 			.order('timestamp', { ascending: false });
@@ -145,7 +145,7 @@ export async function getStoryById(id: number, obs: ObservationSession = createO
 	try {
 		obs.step('fetch_story_by_id');
 
-		const { data, error } = await supabaseAdmin
+		const { data, error } = await getSupabaseAdminClient()
 			.from('stories')
 			.select('*')
 			.eq('id', id)
@@ -187,7 +187,7 @@ export async function deleteStory(
 		// Step 1: Get the story to find audio file path
 		obs.step('fetch_story_for_deletion');
 
-		const { data: story, error: fetchError } = await supabaseAdmin
+		const { data: story, error: fetchError } = await getSupabaseAdminClient()
 			.from('stories')
 			.select('audio_url')
 			.eq('id', id)
@@ -203,7 +203,7 @@ export async function deleteStory(
 		// Step 2: Delete from database
 		obs.step('delete_story_metadata');
 
-		const { error: deleteError } = await supabaseAdmin
+		const { error: deleteError } = await getSupabaseAdminClient()
 			.from('stories')
 			.delete()
 			.eq('id', id);
@@ -227,7 +227,7 @@ export async function deleteStory(
 			if (filePathMatch) {
 				const filePath = filePathMatch[1];
 
-				const { error: storageError } = await supabaseAdmin.storage
+				const { error: storageError } = await getSupabaseAdminClient().storage
 					.from('recordings')
 					.remove([filePath]);
 

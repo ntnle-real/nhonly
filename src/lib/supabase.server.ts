@@ -4,12 +4,15 @@
 // Failure: Missing environment variables, invalid credentials, or environment mismatch
 
 import { createClient } from '@supabase/supabase-js';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
-import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 import { createObservationSession } from './obs';
 
+// Get environment variables safely (may not exist at build time)
+const PUBLIC_SUPABASE_URL = process.env.PUBLIC_SUPABASE_URL || '';
+const PUBLIC_SUPABASE_ANON_KEY = process.env.PUBLIC_SUPABASE_ANON_KEY || '';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
 /**
- * MARK: FUNCTION(verifySupabaseEnvironment) -> Validate Configuration at Startup
+ * MARK: FUNCTION(verifySupabaseEnvironment) -> Validate Configuration at Runtime
  * Purpose: Ensure Supabase credentials match environment (dev/prod separation)
  * Success: All environment variables present and consistent
  * Failure: Missing variables or environment mismatch detected
@@ -49,9 +52,6 @@ export function verifySupabaseEnvironment(obs = createObservationSession()) {
 	return obs.return_('environment_ready', { verified: true });
 }
 
-// Verify on module load
-verifySupabaseEnvironment();
-
 /**
  * MARK: FUNCTION(getSupabaseAdmin) -> Get Server-Side Database Client
  * Purpose: Create Supabase client with service role key for admin operations
@@ -60,6 +60,11 @@ verifySupabaseEnvironment();
  */
 export function getSupabaseAdmin(obs = createObservationSession()) {
 	obs.step('get_supabase_admin_client');
+
+	if (!PUBLIC_SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+		obs.observe('missing_credentials', { url: !PUBLIC_SUPABASE_URL, key: !SUPABASE_SERVICE_ROLE_KEY });
+		throw new Error('Missing Supabase credentials for admin client');
+	}
 
 	const client = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -80,6 +85,11 @@ export function getSupabaseAdmin(obs = createObservationSession()) {
 export function getSupabasePublic(obs = createObservationSession()) {
 	obs.step('get_supabase_public_client');
 
+	if (!PUBLIC_SUPABASE_URL || !PUBLIC_SUPABASE_ANON_KEY) {
+		obs.observe('missing_credentials', { url: !PUBLIC_SUPABASE_URL, key: !PUBLIC_SUPABASE_ANON_KEY });
+		throw new Error('Missing Supabase credentials for public client');
+	}
+
 	const client = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 
 	obs.observe('public_client_initialized', {
@@ -90,5 +100,12 @@ export function getSupabasePublic(obs = createObservationSession()) {
 	return obs.return_('public_client', client);
 }
 
-// Export default admin client for most server operations
-export const supabaseAdmin = getSupabaseAdmin();
+// Lazy-loaded admin client (only created on first use, not at module load)
+let supabaseAdminInstance: ReturnType<typeof createClient> | null = null;
+
+export function getSupabaseAdminClient() {
+	if (!supabaseAdminInstance) {
+		supabaseAdminInstance = getSupabaseAdmin();
+	}
+	return supabaseAdminInstance;
+}
