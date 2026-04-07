@@ -65,7 +65,18 @@ const strings: Record<Language, Record<string, string>> = {
 		delete_success: 'Chuyện đã bị xóa',
 		playback_error_heading: 'Không thể phát chuyện',
 		playback_error_body: 'Tệp âm thanh có thể bị hỏng. Hãy thử một chuyện khác hoặc ghi âm lại.',
-		playback_error_cta: 'Quay lại kho lưu trữ'
+		playback_error_cta: 'Quay lại kho lưu trữ',
+
+		// Diorama — Phase 3
+		diorama_label: 'Trải nghiệm',
+		diorama_type_badge: 'Trải nghiệm nhập vai',
+		diorama_duration_badge_vi: '~{seconds} giây',
+		diorama_tap_to_begin: 'Chạm để bắt đầu',
+		diorama_exit: '>>',
+		diorama_exit_label: 'Quay lại lưu trữ',
+		diorama_leave_confirm: 'Rời khỏi ký ức này?',
+		diorama_leave_yes: 'Có, quay lại',
+		diorama_leave_no: 'Tiếp tục',
 	},
 	en: {
 		// App header
@@ -125,7 +136,18 @@ const strings: Record<Language, Record<string, string>> = {
 		delete_success: 'Story deleted',
 		playback_error_heading: 'Could not play story',
 		playback_error_body: 'The audio file may be corrupted. Try another story or re-record.',
-		playback_error_cta: 'Return to archive'
+		playback_error_cta: 'Return to archive',
+
+		// Diorama — Phase 3
+		diorama_label: 'Experience',
+		diorama_type_badge: 'Immersive experience',
+		diorama_duration_badge_vi: '~{seconds} sec',
+		diorama_tap_to_begin: 'Tap to begin',
+		diorama_exit: '>>',
+		diorama_exit_label: 'Return to archive',
+		diorama_leave_confirm: 'Leave this memory?',
+		diorama_leave_yes: 'Yes, return',
+		diorama_leave_no: 'Keep reading',
 	}
 };
 
