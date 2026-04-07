@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 02
+current_phase: 03
 status: executing
-last_updated: "2026-04-06T20:28:06.000Z"
+last_updated: "2026-04-07T10:15:30.000Z"
 progress:
   total_phases: 7
-  completed_phases: 1
-  total_plans: 8
-  completed_plans: 6
+  completed_phases: 2
+  total_plans: 12
+  completed_plans: 9
 ---
 
 # Project State & Context
@@ -195,3 +195,44 @@ progress:
 - `/planning/DEPLOYMENT_PHASE_2.md` — Available for future implementation
 - `/planning/PHASE_2_EXECUTION_GUIDE.md` — Available for future implementation
 - (Deprioritized in favor of getting site live for iteration)
+
+---
+
+### Phase 3 Progress (Living Diorama)
+
+**Plan 03-01: Diorama Catalog & Route Setup (COMPLETE 2026-04-07)**
+
+1. ✓ Created diorama.catalog.ts with BEACH_FRAGMENTS mock catalog
+2. ✓ Defined DiaoramaEntry interface and getDioramaById() function
+3. ✓ Added /archive/diorama/[id] route with gradient background
+4. ✓ Added exit button (fixed position, z-index: 100)
+5. ✓ All tests pass, build succeeds
+
+**Plan 03-02: Three.js Scene + Particle System + Golden Hour Background (COMPLETE 2026-04-07)**
+
+1. ✓ Installed three@^0.183.2 and gsap@^3.14.2 as dependencies
+2. ✓ Created diorama.scene.ts with C3 contracts:
+   - detectParticleCount() — adaptive per device type (400-3000 particles)
+   - initScene() — Three.js scene with WebGL renderer, particle system, animation loop
+3. ✓ Created DioramaCanvas.svelte component with Three.js integration
+4. ✓ Integrated into diorama route with proper z-index layering
+5. ✓ All 58 tests pass, no regressions
+
+**Plan 03-03: GSAP ScrollTrigger Text Fragments (COMPLETE 2026-04-07)**
+
+1. ✓ Created diorama.fragments.ts with DioramaFragment interface and BEACH_FRAGMENTS array
+   - 5 narrative fragments for "The Boy on the Beach"
+   - Fragment 4: "He jumped." in amber #ff6b4a, semibold (key moment)
+   - Fragment 5: "The water rose up and caught him." in teal #a0d8e8 (consequence)
+2. ✓ Created DioramaFragments.svelte with GSAP ScrollTrigger animation
+   - Fragments animate in as user scrolls, persist on screen (once: true)
+   - Full prefers-reduced-motion support (all fragments shown immediately)
+   - ScrollTrigger cleanup on destroy (no memory leaks)
+3. ✓ Integrated DioramaFragments into diorama route with scroll container binding
+4. ✓ All 58 tests pass, no regressions
+
+**Duration:** 3 plans, 4.5 hours total | **Commits:** 11 | **Test Pass Rate:** 100% (58/58)
+
+**Upcoming Plans:**
+- 03-04: Audio/Haptic Triggers (Howler.js audio on fragment 4&5, haptic vibration)
+- 03-05+: Additional diorama features (gesture controls, multi-story catalog)
