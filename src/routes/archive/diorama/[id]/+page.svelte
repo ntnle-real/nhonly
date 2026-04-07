@@ -1,26 +1,79 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { currentLanguage, translate } from '$lib/i18n';
 	import { getDioramaById } from '$lib/diorama.catalog';
 	import DioramaCanvas from './DioramaCanvas.svelte';
 	import DioramaFragments from './DioramaFragments.svelte';
+	import TapToBegin from './TapToBegin.svelte';
+	import { initAudio, type AudioHandle } from '$lib/diorama.audio';
+	import { triggerJumpHaptic, triggerWaterHaptic } from '$lib/diorama.haptics';
 
 	const dioramaId = $derived($page.params.id);
 	const diorama = $derived(getDioramaById(dioramaId));
 
 	let scrollContainerEl: HTMLElement | null = $state(null);
+	let audioHandle: AudioHandle | null = $state(null);
 
-	function handleExit(): void {
-		goto('/archive');
-	}
+	// Haptic fire-once flags
+	let jumpHapticFired = false;
+	let waterHapticFired = false;
+	let impactFired = false;
+	let murmurStarted = false;
 
 	onMount(() => {
 		if (!diorama) {
 			goto('/archive');
+			return;
 		}
+		// Initialize audio (context may be suspended on iOS until user gesture)
+		audioHandle = initAudio();
 	});
+
+	onDestroy(() => {
+		audioHandle?.destroy();
+		audioHandle = null;
+	});
+
+	function handleBegin(): void {
+		// Called when user taps TapToBegin overlay
+		audioHandle?.resume();
+	}
+
+	function handleExit(): void {
+		audioHandle?.destroy();
+		goto('/archive');
+	}
+
+	function handleScroll(event: Event): void {
+		const container = event.currentTarget as HTMLElement;
+		const scrollY = container.scrollTop;
+
+		// Fragment 3 (~1400px): start market murmur
+		if (!murmurStarted && scrollY >= 1200) {
+			audioHandle?.setMarketMurmurVolume(0.15);
+			murmurStarted = true;
+		}
+
+		// Fragment 4 (~2200px): jump haptic
+		if (!jumpHapticFired && scrollY >= 2200) {
+			triggerJumpHaptic();
+			jumpHapticFired = true;
+			// Peak market murmur at jump
+			audioHandle?.setMarketMurmurVolume(0.2);
+		}
+
+		// Fragment 5 (~3200px): water impact — haptic + sound
+		if (!waterHapticFired && scrollY >= 3200) {
+			triggerWaterHaptic();
+			audioHandle?.triggerImpact();
+			waterHapticFired = true;
+			impactFired = true;
+			// Fade murmur after impact
+			audioHandle?.setMarketMurmurVolume(0.1);
+		}
+	}
 </script>
 
 <svelte:head>
@@ -33,7 +86,7 @@
 </svelte:head>
 
 <!-- Golden hour gradient background -->
-<div class="diorama-bg" style="
+<div style="
 	position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
 	background: linear-gradient(180deg, #2a5a6b 0%, #4a7a8b 25%, #b8956a 50%, #9a7850 75%, #1a3a3f 100%);
 "></div>
@@ -41,20 +94,28 @@
 <!-- Three.js particle atmosphere (fixed, full-screen, pointer-events: none) -->
 <DioramaCanvas />
 
-<!-- Scroll container (GSAP fragments added in Plan 03) -->
+<!-- Tap-to-begin overlay (iOS audio unlock) -->
+<TapToBegin onBegin={handleBegin} />
+
+<!-- Scroll container (GSAP fragments added in Plan 03) — NOW FIXED -->
 <div
 	bind:this={scrollContainerEl}
-	class="scroll-container"
+	onscroll={handleScroll}
 	style="
-	position: relative; width: 100%; height: 5000px; overflow-y: scroll; overflow-x: hidden;
-	z-index: 1;
-"
+		position: fixed; top: 0; left: 0;
+		width: 100%; height: 100%;
+		overflow-y: scroll; overflow-x: hidden;
+		z-index: 1;
+	"
 >
-	<!-- Fragment layer with GSAP ScrollTrigger animation -->
-	<DioramaFragments scrollContainer={scrollContainerEl} />
+	<!-- Inner spacer provides scrollable height -->
+	<div style="height: 5000px; position: relative; width: 100%;">
+		<!-- Fragment layer with GSAP ScrollTrigger animation -->
+		<DioramaFragments scrollContainer={scrollContainerEl} />
+	</div>
 </div>
 
-<!-- Exit button (">>" top-left) — always on top -->
+<!-- Exit button (">>" top-left, always visible) -->
 <button
 	onclick={handleExit}
 	aria-label={translate($currentLanguage, 'diorama_exit_label')}
