@@ -18,6 +18,17 @@ export const POST: RequestHandler = async ({ request }) => {
 	const obs = createObservationSession();
 	obs.step('handle_post_save_story');
 
+	// Check if Supabase is configured
+	if (!process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.PUBLIC_SUPABASE_URL) {
+		obs.observe('supabase_not_configured', {
+			hasUrl: !!process.env.PUBLIC_SUPABASE_URL,
+			hasKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+		});
+		return json({
+			error: 'Database not configured. Please set SUPABASE_SERVICE_ROLE_KEY and PUBLIC_SUPABASE_URL in .env.production'
+		}, { status: 503 });
+	}
+
 	try {
 		// Parse FormData
 		obs.step('parse_form_data');
@@ -102,6 +113,11 @@ export const GET: RequestHandler = async () => {
 	const obs = createObservationSession();
 	obs.step('handle_get_all_stories');
 
+	// Check if Supabase is configured
+	if (!process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.PUBLIC_SUPABASE_URL) {
+		return json([], { status: 200 }); // Return empty array gracefully
+	}
+
 	try {
 		obs.step('fetch_from_database');
 
@@ -132,6 +148,11 @@ export const GET: RequestHandler = async () => {
 export const DELETE: RequestHandler = async ({ url }) => {
 	const obs = createObservationSession();
 	obs.step('handle_delete_story');
+
+	// Check if Supabase is configured
+	if (!process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.PUBLIC_SUPABASE_URL) {
+		return json({ error: 'Database not configured' }, { status: 503 });
+	}
 
 	try {
 		// Parse ID from query params
