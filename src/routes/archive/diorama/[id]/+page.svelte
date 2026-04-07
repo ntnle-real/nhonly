@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import { currentLanguage, translate } from '$lib/i18n';
 	import { getDioramaById } from '$lib/diorama.catalog';
+	import DioramaCanvas from './DioramaCanvas.svelte';
 
 	const dioramaId = $derived($page.params.id);
 	const diorama = $derived(getDioramaById(dioramaId));
@@ -28,15 +29,19 @@
 	</style>
 </svelte:head>
 
-<!-- Golden hour gradient background (Three.js canvas added in Plan 02) -->
+<!-- Golden hour gradient background -->
 <div class="diorama-bg" style="
 	position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
 	background: linear-gradient(180deg, #2a5a6b 0%, #4a7a8b 25%, #b8956a 50%, #9a7850 75%, #1a3a3f 100%);
 "></div>
 
+<!-- Three.js particle atmosphere (fixed, full-screen, pointer-events: none) -->
+<DioramaCanvas />
+
 <!-- Scroll container (GSAP fragments added in Plan 03) -->
 <div class="scroll-container" style="
 	position: relative; width: 100%; height: 5000px; overflow-y: scroll; overflow-x: hidden;
+	z-index: 1;
 ">
 	<!-- Text fragments injected here in Plan 03 -->
 </div>
