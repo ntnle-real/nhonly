@@ -17,6 +17,7 @@
 	import { getDioramaById } from '$lib/diorama.catalog';
 	import DioramaCanvas from './DioramaCanvas.svelte';
 	import PixiBoatStudy from './PixiBoatStudy.svelte';
+	import ExhibitPanel from './ExhibitPanel.svelte';
 	import { gsap } from 'gsap';
 	import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 	import { createObservationSession } from '$lib/obs';
@@ -178,6 +179,14 @@
 			</div>
 		</div>
 
+		<!-- Exhibit panel — museum-style artifact information -->
+		<div class="exhibit-panel-sticky" aria-hidden="true">
+			<ExhibitPanel
+				fragmentIndex={Math.floor(sceneState.progress)}
+				isVisible={true}
+			/>
+		</div>
+
 		<!-- Scroll spacer — drives the ScrollTrigger -->
 		<div
 			class="scroll-space"
@@ -281,6 +290,15 @@
 		margin: 0;
 		text-shadow: 0 4px 12px rgba(0,0,0,0.3);
 		will-change: opacity;
+	}
+
+	.exhibit-panel-sticky {
+		position: sticky;
+		top: 0;
+		height: 100vh;
+		margin-top: -100vh;
+		z-index: 4;
+		pointer-events: none;
 	}
 </style>
 
