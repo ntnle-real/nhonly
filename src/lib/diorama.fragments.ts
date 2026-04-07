@@ -1,104 +1,137 @@
-// MARK: SYSTEM(Fragments) -> Diorama Narrative Data
-// Purpose: Define fragment data structure and the boy-on-beach story fragments
-// Success: export typed BEACH_FRAGMENTS array used by DioramaFragments component
-// Failure: none (pure data module)
+// MARK: SYSTEM(Fragments) -> Experiential Narrative Framework
+// Purpose: One sentence at a time, user-driven progression, continuous evolution, final fade to ocean.
+// Success: All 8 locked sentences reveal sequentially; text accumulates; final sentence triggers fade.
+// Failure: Text jumps/scattered; sentences disappear; no fade state.
 
 /**
- * Fragment data structure for narrative reveal in diorama experience.
- * Each fragment represents one line of the story, with positioning, timing, and styling info.
+ * Fragment data structure for mindful narrative reveal in diorama experience.
+ * Each fragment represents one line of the story, centered and timed for pacing.
+ *
+ * Pacing intent: Witness, not narrate. One element at a time. Continuous evolution, not scene swaps.
+ * Terminal state: After "He jumps...", text fades and only ocean remains.
  */
 export interface DioramaFragment {
-	id: string; // "fragment-1" through "fragment-5"
-	triggerScrollPosition: number; // px from scroll start when fragment animates in
-	text: string; // Content of the fragment
-	xOffset: number; // Horizontal offset: -1 (left) to 1 (right), 0 = center
-	yPercent: number; // Vertical position: 0 = top, 100 = bottom of viewport
-	targetOpacity: number; // Final opacity (0.85–1.0)
-	durationMs: number; // Animation in-duration in ms
-	delayMs: number; // Delay before animation starts in ms
+	id: string; // "fragment-0" through "fragment-7"
+	text: string; // Content of the fragment (locked text ending with ellipses)
+	xOffset: number; // Horizontal offset: -1 (left) to 1 (right), 0 = center (all centered)
+	advanceMode: 'automatic' | 'user-triggered'; // 'automatic' = auto-reveal, 'user-triggered' = waits for user action
+	holdDurationMs: number; // How long fragment stays visible before fading (if auto-advancing)
+	fadeOutDurationMs: number; // Duration of fade-out (0 for fragments 0-6, > 0 for fragment 7)
 	fontSize: 'base' | 'lg'; // 'base' = 16px, 'lg' = 20px
 	fontWeight: 400 | 600; // Regular or semibold
-	color: string; // Hex color of fragment text
+	color: string; // Hex color of fragment text (muted, concrete)
 	lineHeight: number; // 1.4 for short, 1.6 for multi-line
 }
 
 /**
- * The Boy on the Beach: 5 narrative fragments revealing the story as reader scrolls.
- * Fragment 1: Establish the protagonist (naked, vulnerable)
- * Fragment 2: Establish setting (ocean everywhere)
- * Fragment 3: Establish sensory detail (salt smell)
- * Fragment 4: KEY MOMENT: He jumped (amber highlight, semibold)
- * Fragment 5: CONSEQUENCE: Water catches him (teal highlight)
+ * The Boy on the Beach, Nhơn Lý, 1976: Eight locked sentences revealing the memory.
+ * Each sentence ends with ellipses. User scrolls to reveal one at a time.
+ * Text accumulates on screen. After "He jumps...", all text fades to reveal ocean alone.
+ *
+ * Fragment 0: Location and year
+ * Fragment 1: Water and light
+ * Fragment 2: Sensory detail (smell)
+ * Fragment 3: Cultural detail (bamboo thúng chai)
+ * Fragment 4: Setting (houses and people)
+ * Fragment 5: More detail (women and fish)
+ * Fragment 6: The protagonist
+ * Fragment 7: The moment (terminal — triggers fade)
  */
 export const BEACH_FRAGMENTS: DioramaFragment[] = [
 	{
-		id: 'fragment-1',
-		triggerScrollPosition: 200,
-		text: 'The boy was naked.',
+		id: 'fragment-0',
+		text: 'Nhơn Lý, 1976...',
 		xOffset: 0,
-		yPercent: 40,
-		targetOpacity: 1.0,
-		durationMs: 1000,
-		delayMs: 0,
+		advanceMode: 'user-triggered',
+		holdDurationMs: 0,
+		fadeOutDurationMs: 0,
 		fontSize: 'lg',
 		fontWeight: 400,
-		color: '#ffffff',
+		color: '#d4d4d0', // Muted gray
+		lineHeight: 1.4,
+	},
+	{
+		id: 'fragment-1',
+		text: 'The water holds the golden light...',
+		xOffset: 0,
+		advanceMode: 'user-triggered',
+		holdDurationMs: 0,
+		fadeOutDurationMs: 0,
+		fontSize: 'base',
+		fontWeight: 400,
+		color: '#d4a76a', // Muted gold
 		lineHeight: 1.4,
 	},
 	{
 		id: 'fragment-2',
-		triggerScrollPosition: 800,
-		text: 'The ocean was everywhere.',
-		xOffset: -0.3,
-		yPercent: 55,
-		targetOpacity: 0.9,
-		durationMs: 800,
-		delayMs: 0,
+		text: 'Fish smell comes up from the sand...',
+		xOffset: 0,
+		advanceMode: 'user-triggered',
+		holdDurationMs: 0,
+		fadeOutDurationMs: 0,
 		fontSize: 'base',
 		fontWeight: 400,
-		color: '#f0e6d0',
+		color: '#9a8b6a', // Muted brown-gray
 		lineHeight: 1.4,
 	},
 	{
 		id: 'fragment-3',
-		triggerScrollPosition: 1400,
-		text: 'Salt smell so thick you could taste it.',
-		xOffset: 0.2,
-		yPercent: 35,
-		targetOpacity: 0.85,
-		durationMs: 900,
-		delayMs: 0,
+		text: 'Thúng chai of bamboo float in the waves...',
+		xOffset: 0,
+		advanceMode: 'user-triggered',
+		holdDurationMs: 0,
+		fadeOutDurationMs: 0,
 		fontSize: 'base',
 		fontWeight: 400,
-		color: '#d4d4d0',
+		color: '#6a9a8b', // Muted teal-gray
 		lineHeight: 1.4,
 	},
 	{
 		id: 'fragment-4',
-		triggerScrollPosition: 2200,
-		text: 'He jumped.',
+		text: 'Houses sit close to the water...',
 		xOffset: 0,
-		yPercent: 50,
-		targetOpacity: 1.0,
-		durationMs: 600,
-		delayMs: 0,
-		fontSize: 'lg',
-		fontWeight: 600,
-		color: '#ff6b4a',
+		advanceMode: 'user-triggered',
+		holdDurationMs: 0,
+		fadeOutDurationMs: 0,
+		fontSize: 'base',
+		fontWeight: 400,
+		color: '#8b8b8b', // Muted gray
 		lineHeight: 1.4,
 	},
 	{
 		id: 'fragment-5',
-		triggerScrollPosition: 3200,
-		text: 'The water rose up and caught him.',
-		xOffset: -0.2,
-		yPercent: 65,
-		targetOpacity: 0.9,
-		durationMs: 1200,
-		delayMs: 0,
+		text: 'Women crouch beside baskets of fish...',
+		xOffset: 0,
+		advanceMode: 'user-triggered',
+		holdDurationMs: 0,
+		fadeOutDurationMs: 0,
 		fontSize: 'base',
 		fontWeight: 400,
-		color: '#a0d8e8',
-		lineHeight: 1.6,
+		color: '#8b8b8b', // Muted gray
+		lineHeight: 1.4,
+	},
+	{
+		id: 'fragment-6',
+		text: 'A naked boy runs toward the ocean...',
+		xOffset: 0,
+		advanceMode: 'user-triggered',
+		holdDurationMs: 0,
+		fadeOutDurationMs: 0,
+		fontSize: 'base',
+		fontWeight: 400,
+		color: '#d4d4d0', // Muted gray
+		lineHeight: 1.4,
+	},
+	{
+		id: 'fragment-7',
+		text: 'He jumps...',
+		xOffset: 0,
+		advanceMode: 'user-triggered',
+		holdDurationMs: 2000, // Hold for 2 seconds before fade
+		fadeOutDurationMs: 2000, // Fade over 2 seconds
+		fontSize: 'lg',
+		fontWeight: 400,
+		color: '#d4d4d0', // Muted gray
+		lineHeight: 1.4,
 	},
 ];
