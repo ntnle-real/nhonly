@@ -363,6 +363,32 @@ dispatch("validation", { isValid, email, message: errorMessage });
 - `onMount` hook for initialization — Used in `+page.svelte` to init database and timer
 - Component destructuring: `let { children } = $props()` — SvelteKit 5 rune syntax in `+layout.svelte`
 
+## Experiential & Diorama Standards
+
+**Mandate:** Living Dioramas are "Atmospheric Memories," not "Web Pages." They must prioritize felt weight, gradual recognition, and abstract suggestion.
+
+1. **Motion & Resistance (GSAP):**
+   - Standard CSS transitions or native scroll-snapping are insufficient for dioramas.
+   - **GSAP ScrollTrigger** is the mandatory engine for scroll-driven progression.
+   - All progression must include "weight" (scrub: true with a non-zero `scrub` value) to simulate the effort of remembering.
+   - Avoid 1:1 linear scroll; use easing and lag to create "viscosity."
+
+2. **Visuals & Atmosphere (Three.js / Shaders):**
+   - **CSS Gradients are for UI; Shaders are for Memories.**
+   - All diorama environments must be driven by a **Three.js Canvas** using **Fragment Shaders**.
+   - **Abstract over Literal:** Do not use explicit images or 3D models unless requested. Use noise, clumping colors, and focal shifts (blur/contrast) to suggest the scene.
+   - **The "Recognition" Arc:** Every diorama must transition from "Unresolved/Noisy" to "Resolved/Clear" as the user scrolls.
+
+3. **Hybrid Architecture:**
+   - **Text as HTML:** Keep fragment text in the DOM (Svelte) for accessibility and SEO.
+   - **Environment as WebGL:** Keep the background and atmosphere in the Three.js Canvas.
+   - **GSAP as the Bridge:** Use GSAP to animate both the HTML text and the Shader uniforms simultaneously to ensure synchronization.
+
+4. **Atmospheric Constraints:**
+   - **Restraint:** No "overproduced" effects (lens flares, heavy particles).
+   - **Simplicity:** Focus on color, light, and haze.
+   - **Persistence:** Fragments should leave a visual "trace" or shift the environment permanently once witnessed.
+
 ---
 
-*Convention analysis: 2026-04-05*
+*Convention analysis: 2026-04-07* (Updated for Phase 3: Living Dioramas)
