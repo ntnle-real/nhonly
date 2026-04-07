@@ -68,8 +68,8 @@ const strings: Record<Language, Record<string, string>> = {
 		playback_error_cta: 'Quay lại kho lưu trữ',
 
 		// Diorama — Phase 3
-		diorama_label: 'Trải nghiệm',
-		diorama_type_badge: 'Trải nghiệm nhập vai',
+		diorama_label: 'Diorama sống',
+		diorama_type_badge: 'Diorama sống',
 		diorama_duration_badge_vi: '~{seconds} giây',
 		diorama_tap_to_begin: 'Chạm để bắt đầu',
 		diorama_exit: '>>',
@@ -77,6 +77,8 @@ const strings: Record<Language, Record<string, string>> = {
 		diorama_leave_confirm: 'Rời khỏi ký ức này?',
 		diorama_leave_yes: 'Có, quay lại',
 		diorama_leave_no: 'Tiếp tục',
+		diorama_reset_label: 'Đang làm lại',
+		diorama_reset_body: 'Phần diorama cũ đã được dọn bỏ. Ký ức này sẽ được dựng lại từ một nền tảng mới.',
 	},
 	en: {
 		// App header
@@ -139,8 +141,8 @@ const strings: Record<Language, Record<string, string>> = {
 		playback_error_cta: 'Return to archive',
 
 		// Diorama — Phase 3
-		diorama_label: 'Experience',
-		diorama_type_badge: 'Immersive experience',
+		diorama_label: 'Living diorama',
+		diorama_type_badge: 'Living diorama',
 		diorama_duration_badge_vi: '~{seconds} sec',
 		diorama_tap_to_begin: 'Tap to begin',
 		diorama_exit: '>>',
@@ -148,6 +150,8 @@ const strings: Record<Language, Record<string, string>> = {
 		diorama_leave_confirm: 'Leave this memory?',
 		diorama_leave_yes: 'Yes, return',
 		diorama_leave_no: 'Keep reading',
+		diorama_reset_label: 'Reset in progress',
+		diorama_reset_body: 'The previous diorama has been cleared. This memory will be rebuilt from a new foundation.',
 	}
 };
 
