@@ -7,6 +7,22 @@ import * as THREE from 'three';
 import type { ObservationSession } from './obs';
 import { createObservationSession } from './obs';
 
+function createCircleTexture(): THREE.CanvasTexture {
+	const size = 64;
+	const canvas = document.createElement('canvas');
+	canvas.width = size;
+	canvas.height = size;
+	const ctx = canvas.getContext('2d')!;
+	const center = size / 2;
+	const gradient = ctx.createRadialGradient(center, center, 0, center, center, center);
+	gradient.addColorStop(0, 'rgba(255,255,255,1)');
+	gradient.addColorStop(0.4, 'rgba(255,255,255,0.8)');
+	gradient.addColorStop(1, 'rgba(255,255,255,0)');
+	ctx.fillStyle = gradient;
+	ctx.fillRect(0, 0, size, size);
+	return new THREE.CanvasTexture(canvas);
+}
+
 // Contract interfaces
 
 interface DetectParticleCountContract {
@@ -104,13 +120,13 @@ export function detectParticleCount(obs = createObservationSession()): number {
 
 	let count: number;
 	if (isLowEnd) {
-		count = 400;
+		count = 300;
 		obs.observe('device_classified', `low_end_mobile, cores=${cores}`);
 	} else if (isMobile) {
-		count = 800 + Math.floor(Math.random() * 400); // 800-1200
+		count = 600;
 		obs.observe('device_classified', `mobile, cores=${cores}, count=${count}`);
 	} else {
-		count = 2000 + Math.floor(Math.random() * 1000); // 2000-3000
+		count = 1200;
 		obs.observe('device_classified', `desktop, cores=${cores}, count=${count}`);
 	}
 
@@ -243,14 +259,17 @@ export function initScene(
 
 	// Step 4: Create particle material and mesh
 	obs.step('create_particle_material');
+	const circleTexture = createCircleTexture();
 	const material = new THREE.PointsMaterial({
 		size: 3,
 		vertexColors: true,
 		transparent: true,
-		opacity: 0.5,
+		opacity: 0.4,
 		sizeAttenuation: true,
 		blending: THREE.AdditiveBlending,
-		depthWrite: false
+		depthWrite: false,
+		alphaMap: circleTexture,
+		alphaTest: 0.01
 	});
 	const particles = new THREE.Points(geometry, material);
 	scene.add(particles);
@@ -265,16 +284,16 @@ export function initScene(
 		animationId = requestAnimationFrame(animate);
 		const elapsed = clock.getElapsedTime();
 
-		// Slow sinusoidal drift of particle system as a whole
-		particles.rotation.y = elapsed * 0.01;
-		particles.rotation.x = Math.sin(elapsed * 0.005) * 0.05;
+		// Very slow sinusoidal drift — barely perceptible
+		particles.rotation.y = elapsed * 0.002;
+		particles.rotation.x = Math.sin(elapsed * 0.001) * 0.01;
 
 		// Individual particle drift via position updates
 		const posArray = geometry.attributes.position.array as Float32Array;
 		for (let i = 0; i < particleCount; i++) {
 			const idx = i * 3;
-			posArray[idx] += Math.sin(elapsed * 0.0005 + posArray[idx + 1] * 0.1) * 0.01;
-			posArray[idx + 1] += Math.cos(elapsed * 0.0003 + posArray[idx] * 0.1) * 0.008;
+			posArray[idx] += Math.sin(elapsed * 0.0001 + posArray[idx + 1] * 0.05) * 0.003;
+			posArray[idx + 1] += Math.cos(elapsed * 0.00008 + posArray[idx] * 0.05) * 0.002;
 
 			// Recycle out-of-bounds particles
 			if (posArray[idx] > 100) posArray[idx] = -100;
@@ -305,6 +324,7 @@ export function initScene(
 		window.removeEventListener('resize', handleResize);
 		geometry.dispose();
 		material.dispose();
+		circleTexture.dispose();
 		renderer.dispose();
 	}
 

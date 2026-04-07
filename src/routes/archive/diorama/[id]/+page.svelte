@@ -13,7 +13,6 @@
 	const dioramaId = $derived($page.params.id);
 	const diorama = $derived(getDioramaById(dioramaId));
 
-	let scrollContainerEl: HTMLElement | null = $state(null);
 	let audioHandle: AudioHandle | null = $state(null);
 
 	// Haptic fire-once flags
@@ -27,11 +26,12 @@
 			goto('/archive');
 			return;
 		}
-		// Initialize audio (context may be suspended on iOS until user gesture)
 		audioHandle = initAudio();
+		window.addEventListener('scroll', handleScroll, { passive: true });
 	});
 
 	onDestroy(() => {
+		window.removeEventListener('scroll', handleScroll);
 		audioHandle?.destroy();
 		audioHandle = null;
 	});
@@ -46,9 +46,8 @@
 		goto('/archive');
 	}
 
-	function handleScroll(event: Event): void {
-		const container = event.currentTarget as HTMLElement;
-		const scrollY = container.scrollTop;
+	function handleScroll(): void {
+		const scrollY = window.scrollY;
 
 		// Fragment 3 (~1400px): start market murmur
 		if (!murmurStarted && scrollY >= 1200) {
@@ -79,40 +78,23 @@
 <svelte:head>
 	<title>{diorama?.title ?? 'Experience'}</title>
 	<style>
-		/* Hide navbar on diorama route */
 		nav, header.site-header { display: none !important; }
-		body { overflow: hidden; }
+		body { background: #0d0d0d; }
 	</style>
 </svelte:head>
 
-<!-- Golden hour gradient background -->
-<div style="
-	position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
-	background: linear-gradient(180deg, #2a5a6b 0%, #4a7a8b 25%, #b8956a 50%, #9a7850 75%, #1a3a3f 100%);
-"></div>
+<!-- Background -->
+<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: #0d0d0d;"></div>
 
-<!-- Three.js particle atmosphere (fixed, full-screen, pointer-events: none) -->
+<!-- Three.js particle atmosphere (fixed, full-screen) -->
 <DioramaCanvas />
 
-<!-- Tap-to-begin overlay (iOS audio unlock) -->
+<!-- Tap-to-begin overlay -->
 <TapToBegin onBegin={handleBegin} />
 
-<!-- Scroll container (GSAP fragments added in Plan 03) — NOW FIXED -->
-<div
-	bind:this={scrollContainerEl}
-	onscroll={handleScroll}
-	style="
-		position: fixed; top: 0; left: 0;
-		width: 100%; height: 100%;
-		overflow-y: scroll; overflow-x: hidden;
-		z-index: 1;
-	"
->
-	<!-- Inner spacer provides scrollable height -->
-	<div style="height: 5000px; position: relative; width: 100%;">
-		<!-- Fragment layer with GSAP ScrollTrigger animation -->
-		<DioramaFragments scrollContainer={scrollContainerEl} />
-	</div>
+<!-- Scrollable content — body scrolls normally, canvas stays fixed behind -->
+<div style="position: relative; height: 5000px; width: 100%; z-index: 2;">
+	<DioramaFragments scrollContainer={null} />
 </div>
 
 <!-- Exit button (">>" top-left, always visible) -->

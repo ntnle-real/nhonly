@@ -34,15 +34,15 @@
 		// Register ScrollTrigger plugin
 		gsap.registerPlugin(ScrollTrigger);
 
-		// Set up scroll triggers for each fragment
+		// Use window as scroller (body scrolls normally)
+		const scroller = scrollContainer ?? window;
+
 		BEACH_FRAGMENTS.forEach((f) => {
 			const el = fragmentEls[f.id];
-			if (!el || !scrollContainer) return;
+			if (!el) return;
 
-			// Start with opacity 0 (hidden)
 			gsap.set(el, { opacity: 0, y: 20 });
 
-			// Animate when scroll position reaches triggerScrollPosition
 			gsap.to(el, {
 				opacity: f.targetOpacity,
 				y: 0,
@@ -51,9 +51,9 @@
 				ease: 'power2.out',
 				scrollTrigger: {
 					trigger: el,
-					scroller: scrollContainer,
+					scroller: scroller,
 					start: 'top 80%',
-					once: true, // Fire once, then stay visible
+					once: true,
 					markers: false
 				}
 			});
