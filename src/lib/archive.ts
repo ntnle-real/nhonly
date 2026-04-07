@@ -49,6 +49,14 @@ export interface ArchivedStory {
 	audioBlob: Blob;
 	timestamp: number; // milliseconds since epoch
 	durationMs: number; // audio duration in milliseconds
+
+	// NEW: Story type (optional for backward compatibility — missing = 'recording')
+	type?: 'recording' | 'diorama';
+
+	// NEW: Diorama-only fields (only present when type === 'diorama')
+	dioramaId?: string;                   // matches DiogramaCatalogEntry.id
+	dioramaPreviewText?: string;          // first fragment text
+	dioramaApproximateDurationMs?: number; // estimated read-through time in ms
 }
 
 const DB_NAME = 'nhonly_archive';
