@@ -1,11 +1,14 @@
 <script lang="ts">
 	import { translate } from '$lib/i18n';
+	import { goto } from '$app/navigation';
 
 	interface StoryItem {
 		id: number;
 		title: string;
 		dateFormatted: string;
 		durationFormatted: string;
+		type?: 'recording' | 'diorama';
+		dioramaId?: string;
 	}
 
 	let {
@@ -15,6 +18,10 @@
 		onDeleteStory = () => {},
 		isLoading = false
 	} = $props();
+
+	function handleOpenDiorama(dioramaId: string): void {
+		goto(`/archive/diorama/${dioramaId}`);
+	}
 </script>
 
 {#if stories.length === 0}
@@ -53,34 +60,60 @@
 		<!-- Stories -->
 		<div class="space-y-0">
 			{#each stories as story (story.id)}
-				<div class="border-t border-white/8 min-h-[64px] flex flex-col justify-between hover:bg-white/4 transition-colors duration-150 cursor-pointer">
-					<div class="pt-4 px-4">
-						<h3 class="font-body text-base text-white/90 font-medium">
-							{story.title}
-						</h3>
+				{#if story.type === 'diorama'}
+					<!-- Diorama Item -->
+					<div
+						class="border-t border-white/8 border-l-2 border-l-amber-400/50 min-h-[52px] flex items-center justify-between px-4 py-3 hover:bg-white/4 transition-colors duration-150 cursor-pointer"
+						onclick={() => handleOpenDiorama(story.dioramaId || '')}
+						role="button"
+						tabindex="0"
+						onkeydown={(e) => {
+							if (e.key === 'Enter' || e.key === ' ') {
+								handleOpenDiorama(story.dioramaId || '');
+							}
+						}}
+					>
+						<div class="flex-1">
+							<h3 class="font-body text-base text-white/90 font-medium">
+								🌊 {translate(currentLanguage, 'diorama_label')}: {story.title}
+							</h3>
+							<p class="font-body text-sm text-sand mt-1">
+								{story.durationFormatted}
+							</p>
+						</div>
+						<div class="ml-4 text-lg text-white/50">→</div>
 					</div>
-					<div class="flex items-center justify-between px-4 pb-4">
-						<p class="font-body text-sm text-sand">
-							{story.dateFormatted} · {story.durationFormatted}
-						</p>
-						<div class="flex gap-2">
-							<button
-								onclick={() => onPlayStory(story.id)}
-								class="text-lg text-teal-light hover:text-teal transition-colors"
-								aria-label="Play story"
-							>
-								▶
-							</button>
-							<button
-								onclick={() => onDeleteStory(story.id)}
-								class="text-lg text-white/50 hover:text-white/80 transition-colors"
-								aria-label="Delete story"
-							>
-								🗑
-							</button>
+				{:else}
+					<!-- Recording Item -->
+					<div class="border-t border-white/8 min-h-[64px] flex flex-col justify-between hover:bg-white/4 transition-colors duration-150 cursor-pointer">
+						<div class="pt-4 px-4">
+							<h3 class="font-body text-base text-white/90 font-medium">
+								🎙️ {story.title}
+							</h3>
+						</div>
+						<div class="flex items-center justify-between px-4 pb-4">
+							<p class="font-body text-sm text-sand">
+								{story.dateFormatted} · {story.durationFormatted}
+							</p>
+							<div class="flex gap-2">
+								<button
+									onclick={() => onPlayStory(story.id)}
+									class="text-lg text-teal-light hover:text-teal transition-colors"
+									aria-label="Play story"
+								>
+									▶
+								</button>
+								<button
+									onclick={() => onDeleteStory(story.id)}
+									class="text-lg text-white/50 hover:text-white/80 transition-colors"
+									aria-label="Delete story"
+								>
+									🗑
+								</button>
+							</div>
 						</div>
 					</div>
-				</div>
+				{/if}
 			{/each}
 		</div>
 	</div>
