@@ -8,6 +8,7 @@ import { createObservationSession } from './obs';
 import { getAllStories, getStory } from './archive';
 import type { ArchivedStory } from './archive';
 import { StorageError, classifyError } from './errors';
+import { DIORAMA_CATALOG } from './diorama.catalog';
 
 // Contract interfaces
 
@@ -110,6 +111,10 @@ export async function readAndSortStories(
 	durationFormatted: string;
 	audioBlob: Blob;
 	timestamp: number;
+	type: 'recording' | 'diorama';
+	dioramaId?: string;
+	dioramaPreviewText?: string;
+	dioramaApproximateDurationMs?: number;
 }>> {
 	// MARK: C3 Contract — Read and Sort Stories
 	// Purpose: Fetch all stories, sort newest-first, format for display
@@ -123,39 +128,49 @@ export async function readAndSortStories(
 		const stories = await getAllStories(obs);
 		obs.observe('stories_fetched', `fetched ${stories.length} stories`);
 
-		obs.step('sort_by_timestamp');
-		const sorted = stories.sort((a, b) => b.timestamp - a.timestamp);
-		obs.observe('stories_sorted', `sorted ${sorted.length} stories descending by timestamp`);
+		// Build diorama display objects from catalog
+		obs.step('synthesize_dioramas');
+		const dioramaItems = DIORAMA_CATALOG.map((d) => ({
+			id: -1 * DIORAMA_CATALOG.indexOf(d) - 1,  // Negative IDs for dioramas (no IndexedDB id)
+			title: language === 'vi' ? d.titleVi : d.title,
+			dateFormatted: '',  // Dioramas have no user date — leave empty
+			durationFormatted: language === 'vi'
+				? `~${Math.round(d.approximateDurationMs / 1000)} giây`
+				: `~${Math.round(d.approximateDurationMs / 1000)} sec`,
+			audioBlob: new Blob(),  // Empty blob — dioramas have no audio blob
+			timestamp: d.createdAt,
+			type: 'diorama' as const,
+			dioramaId: d.id,
+			dioramaPreviewText: d.previewText,
+			dioramaApproximateDurationMs: d.approximateDurationMs,
+		}));
+		obs.observe('dioramas_synthesized', `synthesized ${dioramaItems.length} diorama items`);
 
-		obs.step('format_dates');
-		const withFormattedDates = sorted.map((story) => {
-			const dateFormatted = new Intl.DateTimeFormat(
-				language === 'vi' ? 'vi-VN' : 'en-US',
-				{ month: 'long', day: 'numeric', year: 'numeric' }
-			).format(new Date(story.timestamp));
+		// Tag recording items with type: 'recording'
+		obs.step('tag_recording_items');
+		const recordingItems = stories.map((story) => ({
+			id: story.id,
+			title: story.title,
+			dateFormatted: new Intl.DateTimeFormat(language === 'vi' ? 'vi-VN' : 'en-US', {
+				month: 'long', day: 'numeric', year: 'numeric'
+			}).format(new Date(story.timestamp)),
+			durationFormatted: formatDuration(story.durationMs),
+			audioBlob: story.audioBlob,
+			timestamp: story.timestamp,
+			type: 'recording' as const,
+			dioramaId: undefined,
+			dioramaPreviewText: undefined,
+			dioramaApproximateDurationMs: undefined,
+		}));
+		obs.observe('recordings_tagged', `tagged ${recordingItems.length} recording items`);
 
-			obs.observe('date_formatted', `${story.id}: ${dateFormatted}`);
+		// Merge and sort
+		obs.step('merge_and_sort');
+		const allItems = [...dioramaItems, ...recordingItems];
+		allItems.sort((a, b) => b.timestamp - a.timestamp);
+		obs.observe('items_merged_sorted', `merged and sorted ${allItems.length} total items`);
 
-			return {
-				...story,
-				dateFormatted
-			};
-		});
-		obs.observe('dates_formatted', `formatted ${withFormattedDates.length} dates`);
-
-		obs.step('format_durations');
-		const withFormattedDurations = withFormattedDates.map((story) => {
-			const durationFormatted = formatDuration(story.durationMs);
-			obs.observe('duration_formatted', `${story.id}: ${durationFormatted}`);
-
-			return {
-				...story,
-				durationFormatted
-			};
-		});
-		obs.observe('durations_formatted', `formatted ${withFormattedDurations.length} durations`);
-
-		return obs.return_('sorted_stories_display', withFormattedDurations);
+		return obs.return_('sorted_stories_display', allItems);
 	} catch (error) {
 		obs.observe('database_error', (error as Error).message);
 		console.error('Error reading stories:', error);
